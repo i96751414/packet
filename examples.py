@@ -3,10 +3,8 @@
 
 from packet import Packet, SafePacket, CBC_MODE, InvalidData
 
-"""
-    Packet Example
-"""
 
+# Example 1 - General Packet
 
 class Packet1(Packet):
     def __init__(self, a=0, b=0, c=0):
@@ -25,9 +23,7 @@ def example1():
     print("Loaded data: %s" % b.__dict__)
 
 
-"""
-    SafePacket Example
-"""
+# Example 2 - SafePacket
 
 SafePacket.encryption_key = "my_key"
 SafePacket.encryption_mode = CBC_MODE
@@ -64,10 +60,7 @@ def example2():
         print("Invalid Data error!")
 
 
-"""
-    Using a connection to send/receive data
-"""
-
+# Example 3 - Using a connection to send/receive data
 
 class DumbConnection:
     def __init__(self):
