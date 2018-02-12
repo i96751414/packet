@@ -12,4 +12,4 @@ __version__ = "0.0.1 (12/02/2018)"
 __all__ = ["Packet", "SafePacket",
            "UnknownPacket", "InvalidData", "UnknownEncryption", "NotSerializable",
            "CBC_MODE", "CTR_MODE",
-           __author__, __email__, __version__]
+           "__author__", "__email__", "__version__"]
