@@ -1,9 +1,63 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import os
+import pyaes
+import hashlib
 from packet.packet import Packet
 from packet.utils import CTR_MODE, CBC_MODE, UnknownEncryption
-from packet.aes import CBCCipher, CTRCipher
+
+
+def _random_iv():
+    """
+    Generate a random initialization vector (suitable for cryptographic use).
+
+    :return: bytes, iv
+    """
+    return os.urandom(16)
+
+
+class _CTRCipher:
+    """
+    Counter (CTR) Cipher mode
+    """
+
+    def __init__(self, key):
+        if isinstance(key, str):
+            key = key.encode()
+        self.__key = hashlib.sha3_256(key).digest()
+
+    def encrypt(self, raw):
+        return pyaes.AESModeOfOperationCTR(self.__key).encrypt(raw)
+
+    def decrypt(self, enc):
+        return pyaes.AESModeOfOperationCTR(self.__key).decrypt(enc)
+
+
+class _CBCCipher:
+    """
+    Cipher Block Chaining (CBC) mode
+    """
+
+    def __init__(self, key, block_size=16):
+        if isinstance(key, str):
+            key = key.encode()
+        self.__key = hashlib.sha3_256(key).digest()
+        self.__block_size = block_size
+
+    def encrypt(self, raw):
+        iv = _random_iv()
+        aes = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(self.__key, iv=iv))
+        data = aes.feed(raw)
+        data += aes.feed()
+        return iv + data
+
+    def decrypt(self, enc):
+        iv = enc[:16]
+        aes = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(self.__key, iv=iv))
+        data = aes.feed(enc[16:])
+        data += aes.feed()
+        return data
 
 
 class SafePacket(Packet):
@@ -21,7 +75,7 @@ class SafePacket(Packet):
         :return: bytes
         """
         cipher = self.__get_cipher()
-        return cipher.encrypt(Packet.dumps(self))
+        return cipher.encrypt(super(SafePacket, self).dumps())
 
     def loads(self, data):
         """
@@ -37,7 +91,7 @@ class SafePacket(Packet):
             decoded = cipher.decrypt(data)
         except Exception:
             raise UnknownEncryption
-        return Packet.loads(self, decoded)
+        return super(SafePacket, self).loads(decoded)
 
     def __get_cipher(self):
         """
@@ -47,5 +101,5 @@ class SafePacket(Packet):
         :return: cipher
         """
         if self.encryption_mode is CBC_MODE:
-            return CBCCipher(self.encryption_key)
-        return CTRCipher(self.encryption_key)
+            return _CBCCipher(self.encryption_key)
+        return _CTRCipher(self.encryption_key)
