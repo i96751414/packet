@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from packet.packet import Packet
+from packet.basepacket import Packet
 from packet.safepacket import SafePacket
 from packet.utils import NotSerializable, InvalidData
 

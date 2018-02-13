@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from packet.utils import *
-from packet.packet import Packet
+from packet.basepacket import Packet
 from packet.safepacket import SafePacket
 from packet.inspectedpacket import InspectedPacket, InspectedSafePacket
 

@@ -4,7 +4,7 @@
 import os
 import pyaes
 import hashlib
-from packet.packet import Packet
+from packet.basepacket import Packet
 from packet.utils import CTR_MODE, CBC_MODE, UnknownEncryption
 
 
