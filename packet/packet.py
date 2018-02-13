@@ -7,8 +7,26 @@ from packet.utils import UnknownPacket, InvalidData, NotSerializable
 
 class Packet:
     """
-    General packet class
+    General packet class. This is the main "Packet" class.
+    Every packet classes should inherit from this one.
     """
+
+    @property
+    def __tag__(self):
+        """
+        Tag of current packet. This must be equal for all instances sharing data.
+
+        :return: str
+        """
+        return self.__class__.__name__
+
+    def _generate_dict(self):
+        """
+        Return packet as a dictionary
+
+        :return: dict
+        """
+        return self.__dict__
 
     def dumps(self):
         """
@@ -17,10 +35,21 @@ class Packet:
         :return: bytes, JSON
         """
         try:
-            data = json.dumps({self.__class__.__name__: self.__dict__}).encode()
+            data = json.dumps({self.__tag__: self._generate_dict()}).encode()
         except TypeError as e:
             raise NotSerializable(e)
         return data
+
+    def _update_dict(self, data):
+        """
+        Update packet dictionary with the given data.
+
+        :param data: dict, new data
+        :return: None
+        """
+        if not isinstance(data, dict) or set(self.__dict__) != set(data):
+            raise InvalidData
+        self.__dict__.update(data)
 
     def loads(self, data):
         """
@@ -30,14 +59,14 @@ class Packet:
         :param data: bytes/str, JSON
         :return: None
         """
-        tag = self.__class__.__name__
+        tag = self.__tag__
         try:
             _data = json.loads(data)
         except Exception:
             raise UnknownPacket
-        if tag not in _data or not isinstance(_data[tag], dict) or set(_data[tag]) != set(self.__dict__):
+        if tag not in _data:
             raise InvalidData
-        self.__dict__.update(_data[tag])
+        self._update_dict(_data[tag])
 
     def receive_from(self, conn, buffer_size=512):
         """
