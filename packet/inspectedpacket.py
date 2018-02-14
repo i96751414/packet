@@ -22,7 +22,7 @@ __allowed_types = {
     "int": "number", "long": "number",
     "float": "real",
     "bool": "boolean",
-    "NoneType": "null",
+    # "NoneType": "null", # NoneType is not allowed
 }
 
 
@@ -68,6 +68,7 @@ def __check_dict(obj, data):
 def __update_dict(obj, data):
     for k, v in get_items(obj.__dict__):
         if _type_string(v) in __allowed_types:
+            # obj.__dict__[k] = obj.__dict__[k].__class__(data[k])
             obj.__dict__[k] = data[k]
         else:
             _update_dict(obj.__dict__[k], data[k])
