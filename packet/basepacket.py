@@ -5,7 +5,7 @@ import json
 from .utils import UnknownPacket, InvalidData, NotSerializable
 
 
-class Packet:
+class Packet(object):
     """
     General packet class. This is the main "Packet" class.
     Every packet classes should inherit from this one.

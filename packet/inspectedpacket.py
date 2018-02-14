@@ -1,9 +1,19 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
 from .basepacket import Packet
 from .safepacket import SafePacket
 from .utils import NotSerializable, InvalidData
+
+PY3 = sys.version_info[0] == 3
+
+if PY3:
+    def get_items(o):
+        return o.items()
+else:
+    def get_items(o):
+        return o.iteritems()
 
 __allowed_types = ["dict",
                    "list", "tuple",
@@ -20,7 +30,7 @@ def _is_instance_of_class(var):
 
 def _generate_dict(obj):
     _dict = {}
-    for k, v in obj.__dict__.items():
+    for k, v in get_items(obj.__dict__):
         t = _type_string(v)
         if t in __allowed_types:
             _dict[k] = v
@@ -38,7 +48,7 @@ def _type_string(var):
 def __check_dict(obj, data):
     if not isinstance(data, dict) or set(obj.__dict__) != set(data):
         raise Exception
-    for k, v in obj.__dict__.items():
+    for k, v in get_items(obj.__dict__):
         t = _type_string(v)
         if t in __allowed_types:
             if t != _type_string(data[k]):
@@ -52,7 +62,7 @@ def __check_dict(obj, data):
 
 
 def __update_dict(obj, data):
-    for k, v in obj.__dict__.items():
+    for k, v in get_items(obj.__dict__):
         if _type_string(v) in __allowed_types:
             obj.__dict__[k] = data[k]
         else:
