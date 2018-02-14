@@ -15,12 +15,15 @@ else:
     def get_items(o):
         return o.iteritems()
 
-__allowed_types = ["dict",
-                   "list", "tuple",
-                   "str", "unicode",
-                   "int", "long", "float",
-                   "bool",
-                   "NoneType"]
+__allowed_types = {
+    "dict": "object",
+    "list": "array", "tuple": "array",
+    "str": "string", "unicode": "string",
+    "int": "number", "long": "number",
+    "float": "real",
+    "bool": "boolean",
+    "NoneType": "null",
+}
 
 
 def _is_instance_of_class(var):
@@ -49,12 +52,13 @@ def __check_dict(obj, data):
     if not isinstance(data, dict) or set(obj.__dict__) != set(data):
         raise Exception
     for k, v in get_items(obj.__dict__):
-        t = _type_string(v)
-        if t in __allowed_types:
-            if t != _type_string(data[k]):
+        type1 = _type_string(v)
+        type2 = _type_string(data[k])
+        if type1 in __allowed_types:
+            if __allowed_types[type1] != __allowed_types[type2]:
                 raise Exception
         elif _is_instance_of_class(v):
-            if _type_string(data[k]) != "dict":
+            if type2 != "dict":
                 raise Exception
             __check_dict(v, data[k])
         else:
