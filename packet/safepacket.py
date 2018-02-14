@@ -4,8 +4,8 @@
 import os
 import pyaes
 import hashlib
-from packet.basepacket import Packet
-from packet.utils import CTR_MODE, CBC_MODE, UnknownEncryption
+from .basepacket import Packet
+from .utils import CTR_MODE, CBC_MODE, UnknownEncryption
 
 
 def _random_iv():
@@ -25,7 +25,7 @@ class _CTRCipher:
     def __init__(self, key):
         if isinstance(key, str):
             key = key.encode()
-        self.__key = hashlib.sha3_256(key).digest()
+        self.__key = hashlib.sha256(key).digest()
 
     def encrypt(self, raw):
         return pyaes.AESModeOfOperationCTR(self.__key).encrypt(raw)
@@ -42,7 +42,7 @@ class _CBCCipher:
     def __init__(self, key, block_size=16):
         if isinstance(key, str):
             key = key.encode()
-        self.__key = hashlib.sha3_256(key).digest()
+        self.__key = hashlib.sha256(key).digest()
         self.__block_size = block_size
 
     def encrypt(self, raw):

@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from packet.basepacket import Packet
-from packet.safepacket import SafePacket
-from packet.utils import NotSerializable, InvalidData
+from .basepacket import Packet
+from .safepacket import SafePacket
+from .utils import NotSerializable, InvalidData
 
 __allowed_types = ["dict",
                    "list", "tuple",

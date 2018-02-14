@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import json
-from packet.utils import UnknownPacket, InvalidData, NotSerializable
+from .utils import UnknownPacket, InvalidData, NotSerializable
 
 
 class Packet:

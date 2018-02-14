@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from packet.utils import *
-from packet.basepacket import Packet
-from packet.safepacket import SafePacket
-from packet.inspectedpacket import InspectedPacket, InspectedSafePacket
+from .utils import *
+from .basepacket import Packet
+from .safepacket import SafePacket
+from .inspectedpacket import InspectedPacket, InspectedSafePacket
 
 __author__ = "i96751414"
 __email__ = "i96751414@gmail.com"
