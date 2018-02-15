@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import inspect
 from .basepacket import Packet
 from .safepacket import SafePacket
 from .utils import NotSerializable, InvalidData, JSON_SERIALIZER, AST_SERIALIZER
@@ -31,8 +32,11 @@ _ast_allowed_types = [
 
 
 def _is_instance_of_class(var):
-    # TODO - improve this check: instances of classes with a __call__() method are also callable
-    return not callable(var) and hasattr(var, "__dict__")
+    # TODO - add support for __slots__
+    return hasattr(var, "__dict__") and \
+           not inspect.isroutine(var) and \
+           not inspect.isclass(var) and \
+           not inspect.ismodule(var)
 
 
 def _type_string(var):
