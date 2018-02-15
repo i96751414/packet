@@ -60,6 +60,32 @@ class _CBCCipher:
         return data
 
 
+def set_packet_encryption_key(key):
+    """
+    Set encryption key to be used when serializing packets.
+    Encryption key must be a string.
+
+    :param key: str, Encryption key
+    :return: None
+    """
+    if not isinstance(key, str):
+        raise ValueError("Key must be a string")
+    SafePacket.encryption_key = key
+
+
+def set_packet_encryption_mode(mode):
+    """
+    Set encryption mode to be used when serializing packets.
+    Encryption mode must be either CBC_MODE or CTR_MODE.
+
+    :param mode: int, Encryption mode
+    :return: None
+    """
+    if not isinstance(mode, int) or (mode != CBC_MODE and mode != CTR_MODE):
+        raise ValueError("Unknown mode")
+    SafePacket.encryption_mode = mode
+
+
 class SafePacket(Packet):
     """
     General SafePacket class

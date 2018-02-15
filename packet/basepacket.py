@@ -24,6 +24,20 @@ def _check_dict_keys(obj):
             _check_dict_keys(v)
 
 
+def set_packet_serializer(serializer):
+    """
+    Set serializer to be used in all packets.
+    Serializer must be either JSON_SERIALIZER or AST_SERIALIZER.
+
+    :param serializer: int, Serializer to use
+    :return: None
+    """
+    if not isinstance(serializer, int) or (
+            serializer != JSON_SERIALIZER and serializer != AST_SERIALIZER):
+        raise ValueError("Unknown serializer")
+    Packet.packet_serializer = serializer
+
+
 class Packet(object):
     """
     General packet class. This is the main "Packet" class.
