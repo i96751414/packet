@@ -100,6 +100,6 @@ class SafePacket(Packet):
 
         :return: cipher
         """
-        if self.encryption_mode is CBC_MODE:
+        if self.encryption_mode == CBC_MODE:
             return _CBCCipher(self.encryption_key)
         return _CTRCipher(self.encryption_key)

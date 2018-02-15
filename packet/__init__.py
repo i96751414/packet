@@ -12,5 +12,6 @@ __version__ = "0.0.1 (12/02/2018)"
 
 __all__ = ["Packet", "SafePacket", "InspectedPacket", "InspectedSafePacket",
            "UnknownPacket", "InvalidData", "UnknownEncryption", "NotSerializable",
+           "JSON_SERIALIZER", "AST_SERIALIZER",
            "CBC_MODE", "CTR_MODE",
            "__author__", "__email__", "__version__"]

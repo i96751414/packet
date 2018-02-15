@@ -1,8 +1,27 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import ast
 import json
 from .utils import UnknownPacket, InvalidData, NotSerializable
+from .utils import JSON_SERIALIZER, AST_SERIALIZER
+from ._compat import get_items
+
+
+def _check_dict_keys(obj):
+    """
+    Check if all obj keys are strings, so it can be json serialized.
+    If one of the keys is not string, raise TypeError.
+
+    :param obj: dict, Dict to verify
+    :return: None
+    """
+
+    for k, v in get_items(obj):
+        if not isinstance(k, str):
+            raise TypeError("Only string keys are allowed in Packet dicts")
+        if isinstance(v, dict):
+            _check_dict_keys(v)
 
 
 class Packet(object):
@@ -10,6 +29,8 @@ class Packet(object):
     General packet class. This is the main "Packet" class.
     Every packet classes should inherit from this one.
     """
+
+    packet_serializer = JSON_SERIALIZER
 
     @property
     def __tag__(self):
@@ -30,15 +51,24 @@ class Packet(object):
 
     def dumps(self):
         """
-        Serialize packet object to a JSON formatted string using the packet name as the tag.
+        Serialize packet object to string using the packet name as the tag.
 
         :return: bytes, JSON
         """
-        try:
-            data = json.dumps({self.__tag__: self._generate_dict()}).encode()
-        except TypeError as e:
-            raise NotSerializable(e)
-        return data
+        _data = self._generate_dict()
+        if self.packet_serializer == AST_SERIALIZER:
+            try:
+                data = repr({self.__tag__: _data})
+                ast.literal_eval(data)
+            except ValueError:
+                raise NotSerializable
+        else:
+            try:
+                _check_dict_keys(_data)
+                data = json.dumps({self.__tag__: _data})
+            except TypeError as e:
+                raise NotSerializable(e)
+        return data.encode()
 
     def _update_dict(self, data):
         """
@@ -53,7 +83,7 @@ class Packet(object):
 
     def loads(self, data):
         """
-        Deserialize data (instance containing a JSON document) and update packet object.
+        Deserialize data and update packet object.
         Raises UnknownPacket or InvalidData if the data is not deserializable.
 
         :param data: bytes/str, JSON
@@ -61,8 +91,15 @@ class Packet(object):
         """
         tag = self.__tag__
         try:
-            _data = json.loads(data)
+            if self.packet_serializer == AST_SERIALIZER:
+                if isinstance(data, bytes):
+                    data = data.decode()
+                _data = ast.literal_eval(data)
+            else:
+                _data = json.loads(data)
         except Exception:
+            raise UnknownPacket
+        if not isinstance(_data, dict):
             raise UnknownPacket
         if tag not in _data:
             raise InvalidData
