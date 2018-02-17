@@ -64,10 +64,11 @@ class Packet(object):
         :return: set, attributes
         """
         attributes = set()
-        for cls in obj.__class__.__mro__:
-            for slot in getattr(cls, "__slots__", []):
-                if hasattr(obj, slot):
-                    attributes.add(slot)
+        if hasattr(obj.__class__, "__mro__"):
+            for cls in obj.__class__.__mro__:
+                for slot in getattr(cls, "__slots__", []):
+                    if hasattr(obj, slot):
+                        attributes.add(slot)
 
         attributes.update(getattr(obj, "__dict__", {}))
         return attributes
@@ -116,7 +117,7 @@ class Packet(object):
         if set(data) != self._get_attributes(self):
             raise InvalidData("Attributes do not match")
         for k, v in get_items(data):
-            self.__setattr__(k, v)
+            setattr(self, k, v)
 
     def loads(self, data):
         """

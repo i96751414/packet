@@ -97,7 +97,7 @@ class InspectedPacket(Packet):
             t = _type_string(value)
             if (self.packet_serializer == JSON_SERIALIZER and t in _json_allowed_types) or (
                     self.packet_serializer == AST_SERIALIZER and t in _ast_allowed_types):
-                obj.__setattr__(attribute, data[attribute])
+                setattr(obj, attribute, data[attribute])
             else:
                 self.__update_dict(value, data[attribute])
 
