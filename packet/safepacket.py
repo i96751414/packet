@@ -115,8 +115,8 @@ class SafePacket(Packet):
         cipher = self.__get_cipher()
         try:
             decoded = cipher.decrypt(data)
-        except Exception:
-            raise UnknownEncryption
+        except Exception as e:
+            raise UnknownEncryption(e)
         return super(SafePacket, self).loads(decoded)
 
     def __get_cipher(self):

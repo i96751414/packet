@@ -55,13 +55,33 @@ class Packet(object):
         """
         return self.__class__.__name__
 
+    @staticmethod
+    def _get_attributes(obj):
+        """
+        Get all the attributes of a given object as a set.
+
+        :param obj: object to check attributes
+        :return: set, attributes
+        """
+        attributes = set()
+        for cls in obj.__class__.__mro__:
+            for slot in getattr(cls, "__slots__", []):
+                if hasattr(obj, slot):
+                    attributes.add(slot)
+
+        attributes.update(getattr(obj, "__dict__", {}))
+        return attributes
+
     def _generate_dict(self):
         """
         Return packet as a dictionary
 
         :return: dict
         """
-        return self.__dict__
+        _dict = {}
+        for attribute in self._get_attributes(self):
+            _dict[attribute] = getattr(self, attribute)
+        return _dict
 
     def dumps(self):
         """
@@ -74,8 +94,8 @@ class Packet(object):
             try:
                 data = repr({self.__tag__: _data})
                 ast.literal_eval(data)
-            except ValueError:
-                raise NotSerializable
+            except ValueError as e:
+                raise NotSerializable(e)
         else:
             try:
                 _check_dict_keys(_data)
@@ -91,9 +111,12 @@ class Packet(object):
         :param data: dict, new data
         :return: None
         """
-        if not isinstance(data, dict) or set(self.__dict__) != set(data):
-            raise InvalidData
-        self.__dict__.update(data)
+        if not isinstance(data, dict):
+            raise InvalidData("Expected dictionary data")
+        if set(data) != self._get_attributes(self):
+            raise InvalidData("Attributes do not match")
+        for k, v in get_items(data):
+            self.__setattr__(k, v)
 
     def loads(self, data):
         """
@@ -111,12 +134,12 @@ class Packet(object):
                 _data = ast.literal_eval(data)
             else:
                 _data = json.loads(data)
-        except Exception:
-            raise UnknownPacket
+        except Exception as e:
+            raise UnknownPacket(e)
         if not isinstance(_data, dict):
-            raise UnknownPacket
+            raise UnknownPacket("Expected dictionary data")
         if tag not in _data:
-            raise InvalidData
+            raise InvalidData("Expected data with tag '%s'" % tag)
         self._update_dict(_data[tag])
 
     def receive_from(self, conn, buffer_size=512):
