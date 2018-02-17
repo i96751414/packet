@@ -24,6 +24,24 @@ def _check_dict_keys(obj):
             _check_dict_keys(v)
 
 
+def set_json_serializer():
+    """
+    Set JSON_SERIALIZER as the serializer to be used in all packets.
+
+    :return: None
+    """
+    Packet.packet_serializer = JSON_SERIALIZER
+
+
+def set_ast_serializer():
+    """
+    Set AST_SERIALIZER as the serializer to be used in all packets.
+
+    :return: None
+    """
+    Packet.packet_serializer = AST_SERIALIZER
+
+
 def set_packet_serializer(serializer):
     """
     Set serializer to be used in all packets.
