@@ -16,10 +16,13 @@ Example 3 - InspectedPacket:
     If you want to send an encrypted InspectedPacket use InspectedSafePacket.
 """
 
-from packet import InspectedPacket, InvalidData
+import datetime
+from packet import InspectedPacket, InvalidData, set_ast_serializer
+
+set_ast_serializer()
 
 
-class InnerClass:
+class InnerClass(object):
     def __init__(self):
         self.inner_a = 1
         self.inner_b = 2
@@ -31,6 +34,7 @@ class DummyPacket(InspectedPacket):
         self.a = 1
         self.b = None  # Avoid using None, as it can´t be changed
         self.c = InnerClass()
+        self.d = datetime.datetime(2000, 1, 1)
 
 
 def example3():
@@ -41,11 +45,12 @@ def example3():
     # Change some values so we can see they will be loaded
     packet1.a = 123
     packet1.c.inner_a = 123
+    packet1.d = datetime.datetime.now()
 
     # Send packet1 data to packet2
     packet2.loads(packet1.dumps())
 
-    print("packet2.a: %s, packet2.c.inner_a: %s" % (packet2.a, packet2.c.inner_a))
+    print("packet2.a: %s, packet2.c.inner_a: %s, packet2.d: %s" % (packet2.a, packet2.c.inner_a, packet2.d))
     print("packet 2 dump: %s" % packet2.dumps())
 
     # What if we change packet1.b from None to other thing?
