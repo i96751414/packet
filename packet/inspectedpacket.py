@@ -34,7 +34,7 @@ _ast_allowed_types = [
 def _is_instance_of_class(obj):
     """
     Check if object is instance of class.
-    
+
     :param obj: object to check
     :return: bool, is instance of class
     """
