@@ -72,7 +72,7 @@ def _get_reduced(obj):
     return tuple(reduced)
 
 
-def _var_from_reduce(cls, args, state=None, list_items=None, dict_items=None):
+def _obj_from_reduce(cls, args, state=None, list_items=None, dict_items=None):
     """
     Get instance of cls with specified parameters.
 
@@ -188,7 +188,7 @@ class InspectedPacket(Packet):
                 if type2 != "list" and type2 != "tuple":
                     raise InvalidData("Expected list/tuple for attribute '%s'" % attribute)
                 try:
-                    _var_from_reduce(value.__class__, *data[attribute])
+                    _obj_from_reduce(value.__class__, *data[attribute])
                 except Exception as e:
                     raise InvalidData(e)
 
@@ -206,7 +206,7 @@ class InspectedPacket(Packet):
             elif _is_instance_of_class(value):
                 self.__update_dict(value, data[attribute])
             else:
-                setattr(obj, attribute, _var_from_reduce(value.__class__, *data[attribute]))
+                setattr(obj, attribute, _obj_from_reduce(value.__class__, *data[attribute]))
 
     def _update_dict(self, data):
         """
