@@ -34,6 +34,10 @@ if PY_VERSION >= (3, 2):
     # Empty sets are not allowed. Sets are allowed since Python 3.2
     _ast_allowed_types.append("set")
 
+FLOAT_P_INF = "Infinity"
+FLOAT_N_INF = "-Infinity"
+FLOAT_NAN = "NaN"
+
 
 def _is_instance_of_class(obj):
     """
@@ -42,10 +46,8 @@ def _is_instance_of_class(obj):
     :param obj: object to check
     :return: bool, is instance of class
     """
-    return (hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and \
-        not inspect.isroutine(obj) and \
-        not inspect.isclass(obj) and \
-        not inspect.ismodule(obj)
+    return (hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and not inspect.isroutine(
+        obj) and not inspect.isclass(obj) and not inspect.ismodule(obj)
 
 
 def _can_be_reduced(obj):
@@ -131,6 +133,35 @@ def _type_string(var):
     return var.__class__.__name__
 
 
+def _encode_ast_float(value):
+    if value == float("inf"):
+        return FLOAT_P_INF
+    elif value == float("-inf"):
+        return FLOAT_N_INF
+    elif value == float("nan"):
+        return FLOAT_NAN
+    else:
+        return value
+
+
+def _decode_ast_float(value):
+    if isinstance(value, str):
+        if value == FLOAT_P_INF:
+            return float("inf")
+        elif value == FLOAT_N_INF:
+            return float("-inf")
+        else:
+            return float("nan")
+    return value
+
+
+def _check_ast_float(attribute, value):
+    if isinstance(value, float) or (isinstance(value, str) and value in [FLOAT_P_INF, FLOAT_N_INF, FLOAT_NAN]):
+        return
+    raise InvalidData("AST types not matching. Got '%s' but expected 'float' for attribute %s" % (
+        _type_string(value), attribute))
+
+
 class InspectedPacket(Packet):
     """
     Inspected packet class
@@ -142,9 +173,14 @@ class InspectedPacket(Packet):
             value = getattr(obj, attribute)
             t = _type_string(value)
 
-            if (self.packet_serializer == JSON_SERIALIZER and t in _json_allowed_types) or (
-                    self.packet_serializer == AST_SERIALIZER and t in _ast_allowed_types):
+            if self.packet_serializer == JSON_SERIALIZER and t in _json_allowed_types:
                 _dict[attribute] = value
+
+            elif self.packet_serializer == AST_SERIALIZER and t in _ast_allowed_types:
+                if t == "float":
+                    _dict[attribute] = _encode_ast_float(value)
+                else:
+                    _dict[attribute] = value
 
             elif _is_instance_of_class(value):
                 _dict[attribute] = self.__generate_dict(value)
@@ -177,11 +213,15 @@ class InspectedPacket(Packet):
 
             if self.packet_serializer == JSON_SERIALIZER and type1 in _json_allowed_types:
                 if type2 not in _json_allowed_types or _json_allowed_types[type1] != _json_allowed_types[type2]:
-                    raise InvalidData("JSON types not matching. Got '%s' but expected '%s'" % (type2, type1))
+                    raise InvalidData("JSON types not matching. Got '%s' but expected '%s' for attribute %s" % (
+                        type2, type1, attribute))
 
             elif self.packet_serializer == AST_SERIALIZER and type1 in _ast_allowed_types:
-                if type1 != type2:
-                    raise InvalidData("AST types not matching. Got '%s' but expected '%s'" % (type2, type1))
+                if type1 == "float":
+                    _check_ast_float(attribute, data[attribute])
+                elif type1 != type2:
+                    raise InvalidData("AST types not matching. Got '%s' but expected '%s' for attribute %s" % (
+                        type2, type1, attribute))
 
             elif _is_instance_of_class(value):
                 if type2 != "dict":
@@ -197,16 +237,20 @@ class InspectedPacket(Packet):
                     raise InvalidData(e)
 
             else:
-                raise InvalidData("Attribute type not supported: '%s'" % type1)
+                raise InvalidData("Type of attribute '%s' is not supported: '%s'" % (attribute, type1))
 
     def __update_dict(self, obj, data):
         for attribute in self._get_attributes(obj):
             value = getattr(obj, attribute)
             t = _type_string(value)
 
-            if (self.packet_serializer == JSON_SERIALIZER and t in _json_allowed_types) or (
-                    self.packet_serializer == AST_SERIALIZER and t in _ast_allowed_types):
+            if self.packet_serializer == JSON_SERIALIZER and t in _json_allowed_types:
                 setattr(obj, attribute, data[attribute])
+            elif self.packet_serializer == AST_SERIALIZER and t in _ast_allowed_types:
+                if t == "float":
+                    setattr(obj, attribute, _decode_ast_float(data[attribute]))
+                else:
+                    setattr(obj, attribute, data[attribute])
             elif _is_instance_of_class(value):
                 self.__update_dict(value, data[attribute])
             else:
