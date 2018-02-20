@@ -3,8 +3,9 @@
 
 import sys
 
-PY3 = sys.version_info[0] == 3
-PY2 = sys.version_info[0] == 2
+PY_VERSION = sys.version_info[0:2]
+PY3 = PY_VERSION[0] == 3
+PY2 = PY_VERSION[0] == 2
 
 if PY3:
     def get_items(o):
