@@ -20,7 +20,7 @@ _json_allowed_types = {
 _ast_allowed_types = [
     "dict",
     "list", "tuple",
-    "set",  # Empty sets are not allowed. Sets are allowed since Python 3.2
+    "set",
     "str", "unicode",
     "bytes",
     "int", "long",
@@ -38,10 +38,8 @@ def _is_instance_of_class(obj):
     :param obj: object to check
     :return: bool, is instance of class
     """
-    return (hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and \
-        not inspect.isroutine(obj) and \
-        not inspect.isclass(obj) and \
-        not inspect.ismodule(obj)
+    return (hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and not inspect.isroutine(
+        obj) and not inspect.isclass(obj) and not inspect.ismodule(obj)
 
 
 def _can_be_reduced(obj):
@@ -52,10 +50,10 @@ def _can_be_reduced(obj):
     :return: bool, can be reduced
     """
     try:
-        reduce = obj.__reduce__()
+        reduced = obj.__reduce__()
     except AttributeError:
         return False
-    return isinstance(reduce, tuple) and 2 <= len(reduce) <= 5 and reduce[0] == obj.__class__
+    return isinstance(reduced, tuple) and 2 <= len(reduced) <= 5 and reduced[0] == obj.__class__
 
 
 def _get_reduced(obj):

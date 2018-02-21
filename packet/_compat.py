@@ -3,12 +3,19 @@
 
 import sys
 
-PY3 = sys.version_info[0] == 3
-PY2 = sys.version_info[0] == 2
+PY_VERSION = sys.version_info[0:2]
+PY3 = PY_VERSION[0] == 3
+PY2 = PY_VERSION[0] == 2
 
 if PY3:
+    string_types = str,
+
+
     def get_items(o):
         return o.items()
 else:
+    string_types = basestring,
+
+
     def get_items(o):
         return o.iteritems()

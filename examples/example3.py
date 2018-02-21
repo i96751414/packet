@@ -24,14 +24,14 @@ set_ast_serializer()
 
 class InnerClass(object):
     def __init__(self):
-        self.inner_a = 1
+        self.inner_a = {1, 2, 3}
         self.inner_b = 2
         self.inner_c = 3
 
 
 class DummyPacket(InspectedPacket):
     def __init__(self):
-        self.a = 1
+        self.a = 1.1
         self.b = None  # Avoid using None, as it can´t be changed
         self.c = InnerClass()
         self.d = datetime.datetime(2000, 1, 1)
@@ -43,8 +43,8 @@ def example3():
     packet2 = DummyPacket()
 
     # Change some values so we can see they will be loaded
-    packet1.a = 123
-    packet1.c.inner_a = 123
+    packet1.a = float("nan")
+    packet1.c.inner_a = set()
     packet1.d = datetime.datetime.now()
 
     # Send packet1 data to packet2
