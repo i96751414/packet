@@ -6,7 +6,6 @@ import inspect
 from .basepacket import Packet
 from .safepacket import SafePacket
 from .utils import NotSerializable, InvalidData, JSON_SERIALIZER, AST_SERIALIZER
-from ._compat import PY_VERSION
 
 _json_allowed_types = {
     "dict": "object",
@@ -21,6 +20,7 @@ _json_allowed_types = {
 _ast_allowed_types = [
     "dict",
     "list", "tuple",
+    "set",  # Empty sets are not allowed. Sets are allowed since Python 3.2
     "str", "unicode",
     "bytes",
     "int", "long",
@@ -29,10 +29,6 @@ _ast_allowed_types = [
     "bool",
     "NoneType",  # NoneType can't be updated. Avoid using it
 ]
-
-if PY_VERSION >= (3, 2):
-    # Empty sets are not allowed. Sets are allowed since Python 3.2
-    _ast_allowed_types.append("set")
 
 
 def _is_instance_of_class(obj):
