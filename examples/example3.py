@@ -31,7 +31,7 @@ class InnerClass(object):
 
 class DummyPacket(InspectedPacket):
     def __init__(self):
-        self.a = 1.1
+        self.a = 1
         self.b = None  # Avoid using None, as it can´t be changed
         self.c = InnerClass()
         self.d = datetime.datetime(2000, 1, 1)
@@ -43,7 +43,7 @@ def example3():
     packet2 = DummyPacket()
 
     # Change some values so we can see they will be loaded
-    packet1.a = float("inf")
+    packet1.a = 123
     packet1.c.inner_a = 123
     packet1.d = datetime.datetime.now()
 
