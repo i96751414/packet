@@ -194,17 +194,22 @@ class InspectedPacket(Packet):
                 raise InvalidData("Attribute type not supported: '%s'" % type1)
 
     def __update_dict(self, obj, data):
+        if isinstance(self, Packet):
+            _setattr = object.__setattr__
+        else:
+            _setattr = setattr
+
         for attribute in self._get_attributes(obj):
             value = getattr(obj, attribute)
             t = _type_string(value)
 
             if (self.packet_serializer == JSON_SERIALIZER and t in _json_allowed_types) or (
                     self.packet_serializer == AST_SERIALIZER and t in _ast_allowed_types):
-                setattr(obj, attribute, data[attribute])
+                _setattr(obj, attribute, data[attribute])
             elif _is_instance_of_class(value):
                 self.__update_dict(value, data[attribute])
             else:
-                setattr(obj, attribute, _obj_from_reduce(value.__class__, *data[attribute]))
+                _setattr(obj, attribute, _obj_from_reduce(value.__class__, *data[attribute]))
 
     def _update_dict(self, data):
         """

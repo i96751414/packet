@@ -83,5 +83,11 @@ def test_json_packet():
     check_json_test_packets(packet1, packet2)
 
 
+def test_undefined_attribute():
+    packet1 = JSONTestPacket()
+    with pytest.raises(AttributeError):
+        packet1.abc = "abc"
+
+
 if __name__ == "__main__":
     pytest.main(sys.argv)

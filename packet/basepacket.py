@@ -2,9 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 import json
+from functools import wraps
 from .utils import UnknownPacket, InvalidData, NotSerializable
 from .utils import JSON_SERIALIZER, AST_SERIALIZER
-from ._compat import get_items, string_types
+from ._compat import get_items, string_types, with_metaclass
 
 # AST necessary imports
 from ast import parse, Expression
@@ -101,7 +102,7 @@ def safe_eval(node_or_string):
                     return left + right
                 else:
                     return left - right
-        raise ValueError('malformed node or string: ' + repr(node))
+        raise ValueError("malformed node or string: %s" % repr(node))
 
     return _convert(node_or_string)
 
@@ -154,7 +155,54 @@ def set_packet_serializer(serializer):
     Packet.packet_serializer = serializer
 
 
-class Packet(object):
+def _setattr(self, name, value):
+    """
+    Set attribute in a Packet instance. This method will override the default
+    object.__setattr__ after __init__ method is called.
+
+    :param name: str, name of attribute to set
+    :param value: obj, value of attribute to set
+    :return: None
+    """
+    if name not in self._get_attributes(self):
+        raise AttributeError("'%s' is not an attribute of '%s' packet" % (
+            name, self.__class__.__name__))
+    object.__setattr__(self, name, value)
+
+
+def _override_init(cls, init):
+    """
+    Override __init__ method of a class.
+
+    :param cls: class to modify
+    :param init: old __init__ function
+    :return: wrapper
+    """
+
+    @wraps(init, ("__name__", "__doc__"))
+    def _wrapper(*a, **k):
+        # Before __init__ use default object __setattr__ method
+        cls.__setattr__ = object.__setattr__
+        # Do __init__
+        init(*a, **k)
+        # After __init__ use custom __setattr__ method
+        cls.__setattr__ = _setattr
+
+    return _wrapper
+
+
+class _PacketMetaClass(type):
+    """
+    MetaClass to be used in Packet in order to override __init__ method
+    """
+
+    def __new__(mcs, *args, **kwargs):
+        cls = type.__new__(mcs, *args, **kwargs)
+        cls.__init__ = _override_init(cls, cls.__init__)
+        return cls
+
+
+class Packet(with_metaclass(_PacketMetaClass, object)):
     """
     General packet class. This is the main "Packet" class.
     Every packet classes should inherit from this one.
@@ -233,7 +281,7 @@ class Packet(object):
         if set(data) != self._get_attributes(self):
             raise InvalidData("Attributes do not match")
         for k, v in get_items(data):
-            setattr(self, k, v)
+            object.__setattr__(self, k, v)
 
     def loads(self, data):
         """
@@ -290,3 +338,6 @@ class Packet(object):
         if conn is None:
             return None
         return conn.send(self.dumps())
+
+    def __delattr__(self, item):
+        raise AttributeError("Can't delete %s" % item)
