@@ -9,11 +9,11 @@ sys.path.insert(0, os.path.dirname((os.path.dirname(__file__))))
 import pytest
 import packet
 import math
-from packet._compat import PY2
 
-if not PY2:
-    unicode = str
-    long = int
+try:
+    from dataset import *
+except ImportError:
+    from .dataset import *
 
 
 def test_packet_safe_eval():
@@ -59,75 +59,16 @@ def test_set_ast_serializer():
     assert packet.Packet.packet_serializer == packet.AST_SERIALIZER
 
 
-class ASTTestPacket(packet.Packet):
-    packet_serializer = packet.AST_SERIALIZER
-
-    def __init__(self):
-        self.dict = dict()
-        self.list = list()
-        self.tuple = tuple()
-        self.set = set()
-        self.str = str()
-        self.unicode = unicode()
-        self.bytes = bytes()
-        self.int = int()
-        self.long = long()
-        self.float = float()
-        self.complex = complex()
-        self.bool = bool()
-        self.none = None
-
-
 def test_ast_packet():
     packet1 = ASTTestPacket()
     packet2 = ASTTestPacket()
 
     # Modify values
-    packet1.dict = {"key": "value"}
-    packet1.list = [1, 2, 3]
-    packet1.tuple = (1, 2, 3)
-    packet1.set = {1, 2, 3}
-    packet1.str = "123"
-    packet1.unicode = unicode("123")
-    packet1.bytes = b"123"
-    packet1.int = 123
-    packet1.long = long(123)
-    packet1.float = float(1.23)
-    packet1.complex = 1 + 23j
-    packet1.bool = True
-    packet1.none = None
+    modify_ast_test_packet(packet1)
 
     packet2.loads(packet1.dumps())
 
-    assert packet1.dict == packet2.dict
-    assert packet1.list == packet2.list
-    assert packet1.tuple == packet2.tuple
-    assert packet1.set == packet2.set
-    assert packet1.str == packet2.str
-    assert packet1.unicode == packet2.unicode
-    assert packet1.bytes == packet2.bytes
-    assert packet1.int == packet2.int
-    assert packet1.long == packet2.long
-    assert packet1.float == packet2.float
-    assert packet1.complex == packet2.complex
-    assert packet1.bool == packet2.bool
-    assert packet1.none == packet2.none
-
-
-class JSONTestPacket(packet.Packet):
-    packet_serializer = packet.JSON_SERIALIZER
-
-    def __init__(self):
-        self.dict = dict()
-        self.list = list()
-        self.tuple = tuple()
-        self.str = str()
-        self.unicode = unicode()
-        self.int = int()
-        self.long = long()
-        self.float = float()
-        self.bool = bool()
-        self.none = None
+    check_ast_test_packet(packet1, packet2)
 
 
 def test_json_packet():
@@ -135,29 +76,11 @@ def test_json_packet():
     packet2 = JSONTestPacket()
 
     # Modify values
-    packet1.dict = {"key": "value"}
-    packet1.list = [1, 2, 3]
-    packet1.tuple = (1, 2, 3)
-    packet1.str = "123"
-    packet1.unicode = unicode("123")
-    packet1.int = 123
-    packet1.long = long(123)
-    packet1.float = float(1.23)
-    packet1.bool = True
-    packet1.none = None
+    modify_json_test_packet(packet1)
 
     packet2.loads(packet1.dumps())
 
-    assert packet1.dict == packet2.dict
-    assert packet1.list == packet2.list
-    assert list(packet1.tuple) == packet2.tuple
-    assert packet1.str == packet2.str
-    assert packet1.unicode == packet2.unicode
-    assert packet1.int == packet2.int
-    assert packet1.long == packet2.long
-    assert packet1.float == packet2.float
-    assert packet1.bool == packet2.bool
-    assert packet1.none == packet2.none
+    check_json_test_packets(packet1, packet2)
 
 
 if __name__ == "__main__":

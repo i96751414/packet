@@ -10,11 +10,11 @@ import math
 import pytest
 import packet
 import collections
-from packet._compat import PY2
 
-if not PY2:
-    unicode = str
-    long = int
+try:
+    from dataset import *
+except ImportError:
+    from .dataset import *
 
 
 def test_set_cbc_mode():
@@ -44,23 +44,8 @@ def test_set_packet_encryption_key():
     assert packet.SafePacket.encryption_key == key
 
 
-class ASTTestSafePacket(packet.SafePacket):
-    packet_serializer = packet.AST_SERIALIZER
-
-    def __init__(self):
-        self.dict = dict()
-        self.list = list()
-        self.tuple = tuple()
-        self.set = set()
-        self.str = str()
-        self.unicode = unicode()
-        self.bytes = bytes()
-        self.int = int()
-        self.long = long()
-        self.float = float()
-        self.complex = complex()
-        self.bool = bool()
-        self.none = None
+class ASTTestSafePacket(ASTTestPacket, packet.SafePacket):
+    pass
 
 
 def is_encrypted(text):
@@ -81,19 +66,7 @@ def test_safe_packet():
         packet2 = ASTTestSafePacket()
 
         # Modify values
-        packet1.dict = {"key": "value"}
-        packet1.list = [1, 2, 3]
-        packet1.tuple = (1, 2, 3)
-        packet1.set = {1, 2, 3}
-        packet1.str = "123"
-        packet1.unicode = unicode("123")
-        packet1.bytes = b"123"
-        packet1.int = 123
-        packet1.long = long(123)
-        packet1.float = float(1.23)
-        packet1.complex = 1 + 23j
-        packet1.bool = True
-        packet1.none = None
+        modify_ast_test_packet(packet1)
 
         dump = packet1.dumps()
         for key in packet1.__dict__.keys():
@@ -101,19 +74,7 @@ def test_safe_packet():
         assert is_encrypted(dump)
         packet2.loads(dump)
 
-        assert packet1.dict == packet2.dict
-        assert packet1.list == packet2.list
-        assert packet1.tuple == packet2.tuple
-        assert packet1.set == packet2.set
-        assert packet1.str == packet2.str
-        assert packet1.unicode == packet2.unicode
-        assert packet1.bytes == packet2.bytes
-        assert packet1.int == packet2.int
-        assert packet1.long == packet2.long
-        assert packet1.float == packet2.float
-        assert packet1.complex == packet2.complex
-        assert packet1.bool == packet2.bool
-        assert packet1.none == packet2.none
+        check_ast_test_packet(packet1, packet2)
 
 
 if __name__ == "__main__":
