@@ -33,7 +33,8 @@ _NUM_TYPES = (int, float, complex)
 # None, True and False are treated as Names in Python 2+
 _SAFE_NAMES = {
     "None": None, "True": True, "False": False,
-    "inf": float("inf"), "-inf": float("-inf"), "nan": float("nan"),
+    "inf": float("inf"), "nan": float("nan"),
+    "infj": complex("infj"), "nanj": complex("nanj"),
 }
 
 _SAFE_CALLS = {
