@@ -5,3 +5,6 @@ __pycache__/
 
 # Pycharm stuff
 .idea
+
+# Pytest stuff
+.pytest_cache
