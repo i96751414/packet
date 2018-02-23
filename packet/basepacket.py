@@ -180,11 +180,11 @@ def _override_init(cls, init):
     """
 
     @wraps(init, ("__name__", "__doc__"))
-    def _wrapper(*a, **k):
+    def _wrapper(*args, **kwargs):
         # Before __init__ use default object __setattr__ method
         cls.__setattr__ = object.__setattr__
         # Do __init__
-        init(*a, **k)
+        init(*args, **kwargs)
         # After __init__ use custom __setattr__ method
         cls.__setattr__ = _setattr
 
