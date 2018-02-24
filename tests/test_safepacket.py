@@ -3,18 +3,16 @@
 
 import os
 import sys
+import pytest
 
 sys.path.insert(0, os.path.dirname((os.path.dirname(__file__))))
 
-import math
-import pytest
 import packet
-import collections
 
 try:
-    from dataset import *
+    from utils import *
 except ImportError:
-    from .dataset import *
+    from .utils import *
 
 
 def test_set_cbc_mode():
@@ -48,15 +46,6 @@ class ASTTestSafePacket(ASTTestPacket, packet.SafePacket):
     pass
 
 
-def is_encrypted(text):
-    scores = collections.defaultdict(lambda: 0)
-    for letter in text:
-        scores[letter] += 1
-    largest = max(scores.values())
-    average = len(text) / 256.0
-    return largest < average + 5 * math.sqrt(average)
-
-
 def test_safe_packet():
     packet.set_packet_encryption_key("key")
     for mode in [packet.CBC_MODE, packet.CTR_MODE]:
@@ -75,6 +64,21 @@ def test_safe_packet():
         packet2.loads(dump)
 
         check_ast_test_packet(packet1, packet2)
+
+
+def test_fail_decryption():
+    packet1 = ASTTestSafePacket()
+    packet2 = ASTTestSafePacket()
+
+    # Modify values
+    modify_ast_test_packet(packet1)
+
+    packet.set_packet_encryption_key("key1")
+    dump = packet1.dumps()
+
+    packet.set_packet_encryption_key("key2")
+    with pytest.raises(packet.UnknownPacket):
+        packet2.loads(dump)
 
 
 if __name__ == "__main__":

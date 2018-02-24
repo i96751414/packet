@@ -3,17 +3,17 @@
 
 import os
 import sys
+import math
+import pytest
 
 sys.path.insert(0, os.path.dirname((os.path.dirname(__file__))))
 
-import pytest
 import packet
-import math
 
 try:
-    from dataset import *
+    from utils import *
 except ImportError:
-    from .dataset import *
+    from .utils import *
 
 
 def test_packet_safe_eval():

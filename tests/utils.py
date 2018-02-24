@@ -1,16 +1,27 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import math
 import packet
+import collections
 from packet._compat import PY2
 
 __all__ = ["ASTTestPacket", "JSONTestPacket", "check_json_test_packets", "check_ast_test_packet",
-           "modify_ast_test_packet", "modify_json_test_packet"]
+           "modify_ast_test_packet", "modify_json_test_packet", "is_encrypted"]
 
 if not PY2:
     unicode = str
     long = int
     __all__.extend(["unicode", "long"])
+
+
+def is_encrypted(text):
+    scores = collections.defaultdict(lambda: 0)
+    for letter in text:
+        scores[letter] += 1
+    largest = max(scores.values())
+    average = len(text) / 256.0
+    return largest < average + 5 * math.sqrt(average)
 
 
 class ASTTestPacket(packet.Packet):
