@@ -21,6 +21,24 @@ class ASTTestInspectedPacket2(packet.InspectedPacket):
         self.a = "a"
         self.b = "b"
         self.c = "c"
+        self._protected = int()
+        self.__private = int()
+
+    @property
+    def protected(self):
+        return self._protected
+
+    @protected.setter
+    def protected(self, value):
+        self._protected = value
+
+    @property
+    def private(self):
+        return self.__private
+
+    @private.setter
+    def private(self, value):
+        self.__private = value
 
 
 class ASTTestInspectedPacket1(ASTTestPacket, packet.InspectedPacket):
@@ -36,6 +54,8 @@ def modify_inspected_ast_test_packets(packet1):
     packet1.inner.a = "A"
     packet1.inner.b = "B"
     packet1.inner.c = "C"
+    packet1.inner.protected = 456
+    packet1.inner.private = 789
 
     packet1.datetime = datetime.datetime.now()
 
@@ -46,6 +66,8 @@ def check_inspected_ast_test_packets(packet1, packet2):
     assert packet1.inner.a == packet2.inner.a
     assert packet1.inner.b == packet2.inner.b
     assert packet1.inner.c == packet2.inner.c
+    assert packet1.inner.protected == packet2.inner.protected
+    assert packet1.inner.private == packet2.inner.private
 
     assert packet1.datetime == packet2.datetime
 

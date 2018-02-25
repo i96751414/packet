@@ -41,6 +41,24 @@ class ASTTestPacket(packet.Packet):
         self.complex = complex()
         self.bool = bool()
         self.none = None
+        self._protected = int()
+        self.__private = int()
+
+    @property
+    def protected(self):
+        return self._protected
+
+    @protected.setter
+    def protected(self, value):
+        self._protected = value
+
+    @property
+    def private(self):
+        return self.__private
+
+    @private.setter
+    def private(self, value):
+        self.__private = value
 
 
 def check_ast_test_packet(packet1, packet2):
@@ -57,6 +75,8 @@ def check_ast_test_packet(packet1, packet2):
     assert packet1.complex == packet2.complex
     assert packet1.bool == packet2.bool
     assert packet1.none == packet2.none
+    assert packet1.protected == packet2.protected
+    assert packet1.private == packet2.private
 
 
 def modify_ast_test_packet(packet1):
@@ -73,6 +93,8 @@ def modify_ast_test_packet(packet1):
     packet1.complex = 1 + 23j
     packet1.bool = True
     packet1.none = None
+    packet1.protected = 456
+    packet1.private = 789
 
 
 class JSONTestPacket(packet.Packet):
@@ -89,6 +111,24 @@ class JSONTestPacket(packet.Packet):
         self.float = float()
         self.bool = bool()
         self.none = None
+        self._protected = int()
+        self.__private = int()
+
+    @property
+    def protected(self):
+        return self._protected
+
+    @protected.setter
+    def protected(self, value):
+        self._protected = value
+
+    @property
+    def private(self):
+        return self.__private
+
+    @private.setter
+    def private(self, value):
+        self.__private = value
 
 
 def check_json_test_packets(packet1, packet2):
@@ -102,6 +142,8 @@ def check_json_test_packets(packet1, packet2):
     assert packet1.float == packet2.float
     assert packet1.bool == packet2.bool
     assert packet1.none == packet2.none
+    assert packet1.protected == packet2.protected
+    assert packet1.private == packet2.private
 
 
 def modify_json_test_packet(packet1):
@@ -115,3 +157,5 @@ def modify_json_test_packet(packet1):
     packet1.float = float(1.23)
     packet1.bool = True
     packet1.none = None
+    packet1.protected = 456
+    packet1.private = 789
