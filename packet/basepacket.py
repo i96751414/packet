@@ -164,7 +164,8 @@ def _setattr(self, name, value):
     :param value: obj, value of attribute to set
     :return: None
     """
-    if name not in self._get_attributes(self):
+    if name not in self._get_attributes(self) and \
+            not isinstance(getattr(self.__class__, name, None), property):
         raise AttributeError("'%s' is not an attribute of '%s' packet" % (
             name, self.__class__.__name__))
     object.__setattr__(self, name, value)
