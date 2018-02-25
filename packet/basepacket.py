@@ -117,7 +117,7 @@ def _check_dict_keys(obj):
     """
 
     for k, v in get_items(obj):
-        if not isinstance(k, str):
+        if not isinstance(k, string_types):
             raise TypeError("Only string keys are allowed in Packet dicts")
         if isinstance(v, dict):
             _check_dict_keys(v)
