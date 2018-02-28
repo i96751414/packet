@@ -16,65 +16,31 @@ except ImportError:
     from .utils import *
 
 
-class ASTTestInspectedPacket2(packet.InspectedPacket):
+class ASTTestInspectedPacket(ASTTestPacket, packet.InspectedPacket):
     def __init__(self):
-        self.a = "a"
-        self.b = "b"
-        self.c = "c"
-        self._protected = int()
-        self.__private = int()
+        super(ASTTestInspectedPacket, self).__init__()
 
-    @property
-    def protected(self):
-        return self._protected
-
-    @protected.setter
-    def protected(self, value):
-        self._protected = value
-
-    @property
-    def private(self):
-        return self.__private
-
-    @private.setter
-    def private(self, value):
-        self.__private = value
-
-
-class ASTTestInspectedPacket1(ASTTestPacket, packet.InspectedPacket):
-    def __init__(self):
-        super(ASTTestInspectedPacket1, self).__init__()
-        self.inner = ASTTestInspectedPacket2()
+        self.inner = ASTTestPacket()
         self.datetime = datetime.datetime(2000, 1, 1)
 
 
 def modify_inspected_ast_test_packets(packet1):
     modify_ast_test_packet(packet1)
-
-    packet1.inner.a = "A"
-    packet1.inner.b = "B"
-    packet1.inner.c = "C"
-    packet1.inner.protected = 456
-    packet1.inner.private = 789
+    modify_ast_test_packet(packet1.inner)
 
     packet1.datetime = datetime.datetime.now()
 
 
 def check_inspected_ast_test_packets(packet1, packet2):
     check_ast_test_packet(packet1, packet2)
-
-    assert packet1.inner.a == packet2.inner.a
-    assert packet1.inner.b == packet2.inner.b
-    assert packet1.inner.c == packet2.inner.c
-    assert packet1.inner.protected == packet2.inner.protected
-    assert packet1.inner.private == packet2.inner.private
+    check_ast_test_packet(packet1.inner, packet2.inner)
 
     assert packet1.datetime == packet2.datetime
 
 
 def test_inspected_packet():
-    packet1 = ASTTestInspectedPacket1()
-    packet2 = ASTTestInspectedPacket1()
+    packet1 = ASTTestInspectedPacket()
+    packet2 = ASTTestInspectedPacket()
 
     # Modify values
     modify_inspected_ast_test_packets(packet1)
@@ -84,7 +50,7 @@ def test_inspected_packet():
     check_inspected_ast_test_packets(packet1, packet2)
 
 
-class ASTTestInspectedSafePacket(ASTTestInspectedPacket1, packet.InspectedSafePacket):
+class ASTTestInspectedSafePacket(ASTTestInspectedPacket, packet.InspectedSafePacket):
     pass
 
 
