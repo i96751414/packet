@@ -126,6 +126,7 @@ def _check_dict_keys(obj):
 def set_json_serializer():
     """
     Set JSON_SERIALIZER as the serializer to be used in all packets.
+    Same as set_packet_serializer(JSON_SERIALIZER).
 
     :return: None
     """
@@ -135,6 +136,7 @@ def set_json_serializer():
 def set_ast_serializer():
     """
     Set AST_SERIALIZER as the serializer to be used in all packets.
+    Same as set_packet_serializer(AST_SERIALIZER).
 
     :return: None
     """
@@ -252,8 +254,9 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
     def dumps(self):
         """
         Serialize packet object to string using the packet name as the tag.
+        Raises NotSerializable if the packet is not serializable.
 
-        :return: bytes, JSON
+        :return: bytes
         """
         _data = self._generate_dict()
         if self.packet_serializer == AST_SERIALIZER:
@@ -289,7 +292,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         Deserialize data and update packet object.
         Raises UnknownPacket or InvalidData if the data is not deserializable.
 
-        :param data: bytes/str, JSON
+        :param data: bytes/str
         :return: None
         """
         tag = self.__tag__
@@ -310,8 +313,10 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     def receive_from(self, conn, buffer_size=512):
         """
-        Receive data from a connection and load it to the packet.
-        If there is an error loading data or no data is obtained, return False.
+        Receive data from a connection conn (typically a socket connection) by doing
+        conn.recv(buffer_size) and loads the received data into the packet.
+        If there is an error loading data or no data is obtained, returns False,
+        otherwise returns True.
 
         :param conn: Socket connection
         :param buffer_size: int, Socket buffer size
@@ -330,8 +335,8 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     def send_to(self, conn):
         """
-        Send data to connection.
-        If no connection, return None.
+        Send data to a connection conn (typically a socket connection).
+        If no connection, returns None, otherwise returns the same as conn.send(data).
 
         :param conn: Socket connection
         :return: int, Bytes sent

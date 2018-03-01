@@ -63,6 +63,7 @@ class _CBCCipher:
 def set_cbc_mode():
     """
     Set CBC_MODE as the encryption mode to be used when serializing packets.
+    Same as set_packet_encryption_mode(CBC_MODE).
 
     :return: None
     """
@@ -71,7 +72,8 @@ def set_cbc_mode():
 
 def set_ctr_mode():
     """
-    Set CBC_MODE as the encryption mode to be used when serializing packets.
+    Set CTR_MODE as the encryption mode to be used when serializing packets.
+    Same as set_packet_encryption_mode(CTR_MODE).
 
     :return: None
     """
