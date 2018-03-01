@@ -251,6 +251,16 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
             _dict[attribute] = getattr(self, attribute)
         return _dict
 
+    def dump(self, fp):
+        """
+        Serialize packet object to fp (a .write()-supporting file-like object).
+        Raises NotSerializable if the packet is not serializable.
+
+        :param fp: file-like object
+        :return: None
+        """
+        fp.write(self.dumps())
+
     def dumps(self):
         """
         Serialize packet object to string using the packet name as the tag.
@@ -286,6 +296,17 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
             raise InvalidData("Attributes do not match")
         for k, v in get_items(data):
             object.__setattr__(self, k, v)
+
+    def load(self, fp):
+        """
+        Deserialize data from fp (a .read()-supporting file-like object) and
+        update packet object.
+        Raises UnknownPacket or InvalidData if the data is not deserializable.
+
+        :param fp: file-like object
+        :return: None
+        """
+        self.loads(fp.read())
 
     def loads(self, data):
         """
