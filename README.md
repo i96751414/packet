@@ -12,32 +12,8 @@
 packet is a python package which allows to serialize objects in a safe way and send them over sockets. The main purpose of packet is to simplify the developer's work and, therefore, its usage is very simple.
 Please keep in mind that packet is not thread-safe - make sure you don't modify the object tree while it is being serialized.
 
-packet provides four main classes (```Packet```, ```SafePacket```, ```InspectedPacket``` and ```InspectedSafePacket```) with a set of common methods to be used:
+packet provides four main classes (```Packet```, ```SafePacket```, ```InspectedPacket``` and ```InspectedSafePacket```) with a set of common methods to be used (see [API](#api) section). It uses **json** (default) or **ast**/**repr** as the serializer/deserializer and further encryption may be added, so you can be assured it is completely safe.
 
-- .**dump**(fp)
-
-    Serialize packet object to ```fp``` (a ```.write()``` supporting file-like object). Raises ```NotSerializable``` if the packet is not serializable.
-
-- .**dumps**()
-    
-    Serialize packet object to string/bytes using the packet name as the tag - this can be then loaded using .**load**() method, as specified below. Raises ```NotSerializable``` if the packet is not serializable.
-
-- .**load**(fp)
-
-    Deserialize data from ```fp``` (a ```.read()``` supporting file-like object) and update packet object. Raises ```UnknownPacket``` or ```InvalidData``` if the data is not deserializable.
-
-- .**loads**(data)
-
-    Deserialize ```data``` and update packet object. Raises ```UnknownPacket``` or ```InvalidData``` if the data is not deserializable.
-
-- .**receive_from**(conn, buffer_size=512)
-
-    Receive data from a connection ```conn``` (typically a socket connection) by doing ```conn.recv(buffer_size)``` and loads the received data into the packet. If there is an error loading data or no data is obtained, returns ```False```, otherwise returns ```True```.
-
-- .**send_to**(conn)
-
-    Send data to a connection ```conn``` (typically a socket connection). If no connection, returns ```None```, otherwise returns the same as ```conn.send(data)```.
-    
 ## Which class to use?
     
 Which class to use depends on your application's purpose. Below are specified all the classes which can be used:
@@ -88,7 +64,7 @@ Output:
 int: 123, float: 1.23
 ```
 
-## API
+## <a name="api"></a>API
 
 #### Methods
 
@@ -107,6 +83,32 @@ int: 123, float: 1.23
 - **SafePacket**
 - **InspectedPacket**
 - **InspectedSafePacket**
+
+###### Common Methods
+
+- .**dump**(fp)
+
+    Serialize packet object to ```fp``` (a ```.write()``` supporting file-like object). Raises ```NotSerializable``` if the packet is not serializable.
+
+- .**dumps**()
+    
+    Serialize packet object to string/bytes using the packet name as the tag - this can be then loaded using .**load**() method, as specified below. Raises ```NotSerializable``` if the packet is not serializable.
+
+- .**load**(fp)
+
+    Deserialize data from ```fp``` (a ```.read()``` supporting file-like object) and update packet object. Raises ```UnknownPacket``` or ```InvalidData``` if the data is not deserializable.
+
+- .**loads**(data)
+
+    Deserialize ```data``` and update packet object. Raises ```UnknownPacket``` or ```InvalidData``` if the data is not deserializable.
+
+- .**receive_from**(conn, buffer_size=512)
+
+    Receive data from a connection ```conn``` (typically a socket connection) by doing ```conn.recv(buffer_size)``` and loads the received data into the packet. If there is an error loading data or no data is obtained, returns ```False```, otherwise returns ```True```.
+
+- .**send_to**(conn)
+
+    Send data to a connection ```conn``` (typically a socket connection). If no connection, returns ```None```, otherwise returns the same as ```conn.send(data)```.
 
 #### Constants
 
