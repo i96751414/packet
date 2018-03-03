@@ -172,7 +172,6 @@ def _setattr(self, name, value):
     object.__setattr__(self, name, value)
 
 
-# Keep this for reference
 class _PacketMetaClass(type):
     """
     MetaClass to be used in Packet in order to override __setattr__ method
