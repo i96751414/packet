@@ -140,6 +140,9 @@ def set_packet_serializer(serializer):
     Packet.packet_serializer = serializer
 
 
+_INITIALISED = "_done_init_packet"
+
+
 def _check_dict_keys(obj):
     """
     Check if all obj keys are strings, so it can be json serialized.
@@ -156,35 +159,17 @@ def _check_dict_keys(obj):
             _check_dict_keys(v)
 
 
-def _setattr(self, name, value):
-    """
-    Set attribute in a Packet instance. This method will override the default
-    object.__setattr__ after __init__ method is called.
-
-    :param name: str, name of attribute to set
-    :param value: obj, value of attribute to set
-    :return: None
-    """
-    if name not in self._get_attributes(self) and \
-            not isinstance(getattr(self.__class__, name, None), property):
-        raise AttributeError("'%s' is not an attribute of '%s' packet" % (
-            name, self.__class__.__name__))
-    object.__setattr__(self, name, value)
-
-
 class _PacketMetaClass(type):
     """
-    MetaClass to be used in Packet in order to override __setattr__ method
+    MetaClass to be used in Packet in order to set _INITIALISED flag
     after __init__ is called
     """
 
     def __call__(cls, *args, **kwargs):
-        # Before __init__ use default object __setattr__ method
-        cls.__setattr__ = object.__setattr__
         # Do __init__
         self = super(_PacketMetaClass, cls).__call__(*args, **kwargs)
-        # After __init__ use custom __setattr__ method
-        cls.__setattr__ = _setattr
+        # Set initialised flag
+        setattr(self, _INITIALISED, True)
         return self
 
 
@@ -221,6 +206,10 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
                         attributes.add(slot)
 
         attributes.update(getattr(obj, "__dict__", {}))
+
+        if isinstance(obj, Packet):
+            attributes.remove(_INITIALISED)
+
         return attributes
 
     def _generate_dict(self):
@@ -348,6 +337,21 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         if conn is None:
             return None
         return conn.send(self.dumps())
+
+    def __setattr__(self, name, value):
+        """
+        Set attribute in a Packet instance.
+
+        :param name: str, name of attribute to set
+        :param value: obj, value of attribute to set
+        :return: None
+        """
+        if getattr(self, _INITIALISED, False) and \
+                name not in self._get_attributes(self) and \
+                not isinstance(getattr(self.__class__, name, None), property):
+            raise AttributeError("'%s' is not an attribute of '%s' packet" % (
+                name, self.__class__.__name__))
+        object.__setattr__(self, name, value)
 
     def __delattr__(self, item):
         raise AttributeError("Can't delete %s" % item)
