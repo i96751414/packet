@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import json
-from functools import wraps
 from .utils import UnknownPacket, InvalidData, NotSerializable
 from .utils import JSON_SERIALIZER, AST_SERIALIZER
 from ._compat import get_items, string_types, with_metaclass
@@ -107,22 +106,6 @@ def safe_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def _check_dict_keys(obj):
-    """
-    Check if all obj keys are strings, so it can be json serialized.
-    If one of the keys is not string, raise TypeError.
-
-    :param obj: dict, Dict to verify
-    :return: None
-    """
-
-    for k, v in get_items(obj):
-        if not isinstance(k, string_types):
-            raise TypeError("Only string keys are allowed in Packet dicts")
-        if isinstance(v, dict):
-            _check_dict_keys(v)
-
-
 def set_json_serializer():
     """
     Set JSON_SERIALIZER as the serializer to be used in all packets.
@@ -157,6 +140,22 @@ def set_packet_serializer(serializer):
     Packet.packet_serializer = serializer
 
 
+def _check_dict_keys(obj):
+    """
+    Check if all obj keys are strings, so it can be json serialized.
+    If one of the keys is not string, raise TypeError.
+
+    :param obj: dict, Dict to verify
+    :return: None
+    """
+
+    for k, v in get_items(obj):
+        if not isinstance(k, string_types):
+            raise TypeError("Only string keys are allowed in Packet dicts")
+        if isinstance(v, dict):
+            _check_dict_keys(v)
+
+
 def _setattr(self, name, value):
     """
     Set attribute in a Packet instance. This method will override the default
@@ -173,36 +172,21 @@ def _setattr(self, name, value):
     object.__setattr__(self, name, value)
 
 
-def _override_init(cls, init):
+# Keep this for reference
+class _PacketMetaClass(type):
     """
-    Override __init__ method of a class.
-
-    :param cls: class to modify
-    :param init: old __init__ function
-    :return: wrapper
+    MetaClass to be used in Packet in order to override __setattr__ method
+    after __init__ is called
     """
 
-    @wraps(init, ("__name__", "__doc__"))
-    def _wrapper(*args, **kwargs):
+    def __call__(cls, *args, **kwargs):
         # Before __init__ use default object __setattr__ method
         cls.__setattr__ = object.__setattr__
         # Do __init__
-        init(*args, **kwargs)
+        self = super(_PacketMetaClass, cls).__call__(*args, **kwargs)
         # After __init__ use custom __setattr__ method
         cls.__setattr__ = _setattr
-
-    return _wrapper
-
-
-class _PacketMetaClass(type):
-    """
-    MetaClass to be used in Packet in order to override __init__ method
-    """
-
-    def __new__(mcs, *args, **kwargs):
-        cls = type.__new__(mcs, *args, **kwargs)
-        cls.__init__ = _override_init(cls, cls.__init__)
-        return cls
+        return self
 
 
 class Packet(with_metaclass(_PacketMetaClass, object)):
