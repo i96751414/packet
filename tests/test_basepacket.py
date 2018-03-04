@@ -5,6 +5,7 @@ import os
 import sys
 import math
 import pytest
+import threading
 
 sys.path.insert(0, os.path.dirname((os.path.dirname(__file__))))
 
@@ -87,6 +88,64 @@ def test_undefined_attribute():
     packet1 = JSONTestPacket()
     with pytest.raises(AttributeError):
         packet1.abc = "abc"
+
+
+class DummyConnection:
+    def __init__(self):
+        self.__data = None
+
+    def send(self, data):
+        self.__data = data
+        return len(data)
+
+    def recv(self, buffer_size):
+        return self.__data[:buffer_size]
+
+
+def test_send_to_and_receive_from():
+    # Create a dummy connection just for tests
+    connection = DummyConnection()
+
+    packet1 = JSONTestPacket()
+    packet2 = JSONTestPacket()
+
+    # Modify values
+    modify_json_test_packet(packet1)
+
+    # Send packet1 data to packet2
+    # Same as packet2.loads(packet1.dumps())
+    packet1.send_to(connection)
+    packet2.receive_from(connection)
+
+    check_json_test_packets(packet1, packet2)
+
+
+def test_delattr():
+    packet1 = JSONTestPacket()
+    with pytest.raises(AttributeError):
+        del packet1.tuple
+
+
+def test_lock_acquire_and_release():
+    packet1 = JSONTestPacket()
+
+    # Get lock so we can change values first
+    packet1.lock_acquire()
+
+    # Launch thread
+    thread = threading.Thread(target=modify_json_test_packet, args=(packet1,))
+    thread.start()
+
+    # Modify values
+    packet1.str = "one two three"
+
+    # Release lock
+    packet1.lock_release()
+
+    # Wait for thread to finish
+    thread.join()
+
+    assert packet1.str == "123"
 
 
 if __name__ == "__main__":
