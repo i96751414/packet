@@ -10,7 +10,7 @@
 <br/>
 
 packet is a python package which allows to serialize objects in a safe way and send them over sockets. The main purpose of packet is to simplify the developer's work and, therefore, its usage is very simple.
-Please keep in mind that packet is not thread-safe - make sure you don't modify the object tree while it is being serialized.
+One nice thing about packet is that it is thread-safe, which means you can serialize and modify the object tree in different threads.
 
 packet provides four main classes (```Packet```, ```SafePacket```, ```InspectedPacket``` and ```InspectedSafePacket```) with a set of common methods to be used (see [API](#api) section). It uses **json** (default) or **ast**/**repr** as the serializer/deserializer and further encryption may be added, so you can be assured it is completely safe.
 
@@ -101,6 +101,12 @@ int: 123, float: 1.23
 - .**loads**(data)
 
     Deserialize ```data``` and update packet object. Raises ```UnknownPacket``` or ```InvalidData``` if the data is not deserializable.
+
+- .**lock_acquire**(\*args, \*\*kwargs)
+
+
+- .**lock_release**()
+
 
 - .**receive_from**(conn, buffer_size=512)
 

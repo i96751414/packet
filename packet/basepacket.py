@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import json
+import threading
 from .utils import UnknownPacket, InvalidData, NotSerializable
 from .utils import JSON_SERIALIZER, AST_SERIALIZER
 from ._compat import get_items, string_types, with_metaclass
@@ -141,6 +142,7 @@ def set_packet_serializer(serializer):
 
 
 _INITIALISED = "_done_init_packet"
+_LOCK = "_packet_lock"
 
 
 def _check_dict_keys(obj):
@@ -181,6 +183,8 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     packet_serializer = JSON_SERIALIZER
 
+    __slots__ = [_INITIALISED, _LOCK]
+
     @property
     def __tag__(self):
         """
@@ -189,6 +193,25 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         :return: str
         """
         return self.__class__.__name__
+
+    def lock_acquire(self, *args, **kwargs):
+        """
+
+        :return: None
+        """
+        if hasattr(self, _LOCK):
+            getattr(self, _LOCK).acquire(*args, **kwargs)
+        else:
+            lock = threading.RLock()
+            object.__setattr__(self, _LOCK, lock)
+            lock.acquire(*args, **kwargs)
+
+    def lock_release(self):
+        """
+
+        :return: None
+        """
+        getattr(self, _LOCK).release()
 
     @staticmethod
     def _get_attributes(obj):
@@ -208,7 +231,10 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         attributes.update(getattr(obj, "__dict__", {}))
 
         if isinstance(obj, Packet):
-            attributes.remove(_INITIALISED)
+            if _INITIALISED in attributes:
+                attributes.remove(_INITIALISED)
+            if _LOCK in attributes:
+                attributes.remove(_LOCK)
 
         return attributes
 
@@ -240,7 +266,13 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
         :return: bytes
         """
-        _data = self._generate_dict()
+
+        self.lock_acquire()
+        try:
+            _data = self._generate_dict()
+        finally:
+            self.lock_release()
+
         if self.packet_serializer == AST_SERIALIZER:
             try:
                 data = repr({self.__tag__: _data})
@@ -288,21 +320,26 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         :param data: bytes/str
         :return: None
         """
-        tag = self.__tag__
+        self.lock_acquire()
         try:
-            if self.packet_serializer == AST_SERIALIZER:
-                if isinstance(data, bytes):
-                    data = data.decode()
-                _data = safe_eval(data)
-            else:
-                _data = json.loads(data)
-        except Exception as e:
-            raise UnknownPacket(e)
-        if not isinstance(_data, dict):
-            raise UnknownPacket("Expected dictionary data")
-        if tag not in _data:
-            raise InvalidData("Expected data with tag '%s'" % tag)
-        self._update_dict(_data[tag])
+            tag = self.__tag__
+            try:
+                if self.packet_serializer == AST_SERIALIZER:
+                    if isinstance(data, bytes):
+                        data = data.decode()
+                    _data = safe_eval(data)
+                else:
+                    _data = json.loads(data)
+            except Exception as e:
+                raise UnknownPacket(e)
+            if not isinstance(_data, dict):
+                raise UnknownPacket("Expected dictionary data")
+            if tag not in _data:
+                raise InvalidData("Expected data with tag '%s'" % tag)
+
+            self._update_dict(_data[tag])
+        finally:
+            self.lock_release()
 
     def receive_from(self, conn, buffer_size=512):
         """
@@ -351,7 +388,12 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
                 not isinstance(getattr(self.__class__, name, None), property):
             raise AttributeError("'%s' is not an attribute of '%s' packet" % (
                 name, self.__class__.__name__))
-        object.__setattr__(self, name, value)
+
+        self.lock_acquire()
+        try:
+            object.__setattr__(self, name, value)
+        finally:
+            self.lock_release()
 
     def __delattr__(self, item):
         raise AttributeError("Can't delete %s" % item)
