@@ -6,6 +6,8 @@
 <p align="center">A simple object serializer which can be used in socket communications</p>
 <div align="center">
   <a href="https://www.codacy.com/app/i96751414/packet?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=i96751414/packet&amp;utm_campaign=Badge_Grade"><img alt="Codacy Badge" src="https://api.codacy.com/project/badge/Grade/adbb128267164e688fd8244a061618fc" /></a>
+  <a href="https://travis-ci.org/i96751414/packet"><img alt="Build Status" src="https://travis-ci.org/i96751414/packet.svg?branch=master" /></a>
+  <a href="https://www.gnu.org/licenses/"><img alt="License" src="https://img.shields.io/:license-GPL--3.0-blue.svg?style=flat" /></a>
 </div>
 <br/>
 
