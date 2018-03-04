@@ -14,21 +14,21 @@ if not PY2:
 
 
 def check_encrypted(data):
-    assert "dict" not in data
-    assert "list" not in data
-    assert "tuple" not in data
-    assert "str" not in data
-    assert "unicode" not in data
-    assert "int" not in data
-    assert "long" not in data
-    assert "float" not in data
-    assert "bool" not in data
-    assert "none" not in data
-    assert "_protected" not in data
-    assert "__private" not in data
-    assert "set" not in data
-    assert "bytes" not in data
-    assert "complex" not in data
+    assert b"dict" not in data
+    assert b"list" not in data
+    assert b"tuple" not in data
+    assert b"str" not in data
+    assert b"unicode" not in data
+    assert b"int" not in data
+    assert b"long" not in data
+    assert b"float" not in data
+    assert b"bool" not in data
+    assert b"none" not in data
+    assert b"_protected" not in data
+    assert b"__private" not in data
+    assert b"set" not in data
+    assert b"bytes" not in data
+    assert b"complex" not in data
 
 
 class JSONTestPacket(packet.Packet):
