@@ -196,6 +196,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     def lock_acquire(self, *args, **kwargs):
         """
+        Acquire a lock for packet. The same as threading.RLock.acquire.
 
         :return: None
         """
@@ -208,6 +209,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     def lock_release(self):
         """
+        Release a lock from packet. The same as threading.RLock.release.
 
         :return: None
         """

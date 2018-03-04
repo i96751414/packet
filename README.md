@@ -104,9 +104,11 @@ int: 123, float: 1.23
 
 - .**lock_acquire**(\*args, \*\*kwargs)
 
+    Acquire a lock for packet. The same as threading.RLock.acquire.
 
 - .**lock_release**()
 
+    Release a lock from packet. The same as threading.RLock.release.
 
 - .**receive_from**(conn, buffer_size=512)
 
