@@ -326,9 +326,9 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         try:
             tag = self.__tag__
             try:
+                if isinstance(data, bytes):
+                    data = data.decode()
                 if self.packet_serializer == AST_SERIALIZER:
-                    if isinstance(data, bytes):
-                        data = data.decode()
                     _data = safe_eval(data)
                 else:
                     _data = json.loads(data)
