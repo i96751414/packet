@@ -169,7 +169,7 @@ class _PacketMetaClass(type):
         # Do __init__
         self = super(_PacketMetaClass, cls).__call__(*args, **kwargs)
         # Set initialised flag
-        setattr(self, _INITIALISED, True)
+        object.__setattr__(self, _INITIALISED, True)
         return self
 
 
