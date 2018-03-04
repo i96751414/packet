@@ -60,7 +60,7 @@ def test_safe_packet():
         dump = packet1.dumps()
         for key in packet1.__dict__.keys():
             assert key.encode() not in dump
-        assert is_encrypted(dump)
+        check_encrypted(dump)
         packet2.loads(dump)
 
         check_ast_test_packet(packet1, packet2)

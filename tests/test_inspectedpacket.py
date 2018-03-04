@@ -64,7 +64,7 @@ def test_inspected_safe_packet():
     modify_inspected_ast_test_packets(packet1)
 
     dump = packet1.dumps()
-    assert is_encrypted(dump)
+    check_encrypted(dump)
     packet2.loads(dump)
 
     check_inspected_ast_test_packets(packet1, packet2)
