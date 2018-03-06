@@ -38,8 +38,9 @@ def _is_instance_of_class(obj):
     :param obj: object to check
     :return: bool, is instance of class
     """
-    return (hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and not inspect.isroutine(
-        obj) and not inspect.isclass(obj) and not inspect.ismodule(obj)
+    return ((hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and
+            not inspect.isroutine(obj) and not inspect.isclass(obj) and
+            not inspect.ismodule(obj))
 
 
 def _can_be_reduced(obj):
@@ -53,12 +54,14 @@ def _can_be_reduced(obj):
         reduced = obj.__reduce__()
     except AttributeError:
         return False
-    return isinstance(reduced, tuple) and 2 <= len(reduced) <= 5 and reduced[0] == obj.__class__
+    return (isinstance(reduced, tuple) and 2 <= len(reduced) <= 5 and
+            reduced[0] == obj.__class__)
 
 
 def _get_reduced(obj):
     """
-    Get result of __reduced__() method from obj converting generators to tuples.
+    Get result of __reduced__() method from obj converting generators
+    to tuples.
 
     :param obj: object to get __reduced__() from
     :return: tuple
@@ -82,17 +85,18 @@ def _obj_from_reduce(cls, args, state=None, list_items=None, dict_items=None):
 
     :param state: The object’s state, which will be passed to the object’s
     __setstate__() method. If the object has no such method then, the value
-    must be a dictionary and it will be added to the object’s __dict__ attribute.
+    must be a dictionary and it will be added to the object’s __dict__
+    attribute.
 
     :param list_items: A sequence of successive items. These items will be
     appended to the object using obj.append(item). This is primarily used for
     list subclasses, but may be used by other classes as long as they have the
     append() method with the appropriate signature.
 
-    :param dict_items: A sequence of successive key-value pairs. These items will
-    be stored to the object using obj[key] = value. This is primarily used for
-    dictionary subclasses, but may be used by other classes as long as they
-    implement __setitem__().
+    :param dict_items: A sequence of successive key-value pairs. These items
+    will be stored to the object using obj[key] = value. This is primarily
+    used for dictionary subclasses, but may be used by other classes as long
+    as they implement __setitem__().
 
     :return: object
     """
@@ -147,7 +151,7 @@ class InspectedPacket(Packet):
                 _dict[attribute] = _get_reduced(value)[1:]
 
             else:
-                raise NotSerializable("Attribute type not supported: '%s'" % t)
+                raise NotSerializable("Attribute type not supported: '{}'".format(t))
         return _dict
 
     def _generate_dict(self):
@@ -171,27 +175,27 @@ class InspectedPacket(Packet):
 
             if self.packet_serializer == JSON_SERIALIZER and type1 in _json_allowed_types:
                 if type2 not in _json_allowed_types or _json_allowed_types[type1] != _json_allowed_types[type2]:
-                    raise InvalidData("JSON types not matching. Got '%s' but expected '%s'" % (type2, type1))
+                    raise InvalidData("JSON types not matching. Got '{}' but expected '{}'".format(type2, type1))
 
             elif self.packet_serializer == AST_SERIALIZER and type1 in _ast_allowed_types:
                 if type1 != type2:
-                    raise InvalidData("AST types not matching. Got '%s' but expected '%s'" % (type2, type1))
+                    raise InvalidData("AST types not matching. Got '{}' but expected '{}'".format(type2, type1))
 
             elif _is_instance_of_class(value):
                 if type2 != "dict":
-                    raise InvalidData("Expected dictionary data for attribute '%s'" % attribute)
+                    raise InvalidData("Expected dictionary data for attribute '{}'".format(attribute))
                 self.__check_dict(value, data[attribute])
 
             elif _can_be_reduced(value):
                 if type2 != "list" and type2 != "tuple":
-                    raise InvalidData("Expected list/tuple for attribute '%s'" % attribute)
+                    raise InvalidData("Expected list/tuple for attribute '{}'".format(attribute))
                 try:
                     _obj_from_reduce(value.__class__, *data[attribute])
                 except Exception as e:
                     raise InvalidData(e)
 
             else:
-                raise InvalidData("Attribute type not supported: '%s'" % type1)
+                raise InvalidData("Attribute type not supported: '{}'".format(type1))
 
     def __update_dict(self, obj, data):
         if isinstance(self, Packet):

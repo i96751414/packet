@@ -5,12 +5,13 @@ python:
   - "3.5"
   - "3.6"
   - "3.7-dev"
-  
+
 # Install dependencies
-install: 
-  - pip install pyaes pytest
+install:
+  - pip install -r requirements.txt
+  - pip install flake8 pytest
 
 # Run tests
-script: 
+script:
+  - flake8
   - pytest -v
-

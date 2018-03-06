@@ -2,15 +2,17 @@
 # -*- coding: UTF-8 -*-
 
 import packet
+# noinspection PyProtectedMember
 from packet._compat import PY2
 
-__all__ = ["ASTTestPacket", "JSONTestPacket", "check_json_test_packets", "check_ast_test_packet",
-           "modify_ast_test_packet", "modify_json_test_packet", "check_encrypted"]
-
-if not PY2:
-    unicode = str
-    long = int
-    __all__.extend(["unicode", "long"])
+if PY2:
+    # noinspection PyUnresolvedReferences
+    Unicode = unicode
+    # noinspection PyUnresolvedReferences
+    Long = long
+else:
+    Unicode = str
+    Long = int
 
 
 def check_encrypted(data):
@@ -39,9 +41,9 @@ class JSONTestPacket(packet.Packet):
         self.list = list()
         self.tuple = tuple()
         self.str = str()
-        self.unicode = unicode()
+        self.unicode = Unicode()
         self.int = int()
-        self.long = long()
+        self.long = Long()
         self.float = float()
         self.bool = bool()
         self.none = None
@@ -85,9 +87,9 @@ def modify_json_test_packet(packet1):
     packet1.list = [1, 2, 3]
     packet1.tuple = (1, 2, 3)
     packet1.str = "123"
-    packet1.unicode = unicode("123")
+    packet1.unicode = Unicode("123")
     packet1.int = 123
-    packet1.long = long(123)
+    packet1.long = Long(123)
     packet1.float = float(1.23)
     packet1.bool = True
     packet1.none = None

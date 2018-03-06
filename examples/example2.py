@@ -43,8 +43,9 @@ def example2():
     # Send packet1 data to packet2
     packet2.loads(packet1.dumps())
 
-    print("packet 2 a: %s, b: %s, c: %s" % (packet2.a, packet2.b, packet2.c))
-    print("packet 2 dump: %s" % packet2.dumps())
+    print("packet 2 a: {}, b: {}, c: {}".format(
+        packet2.a, packet2.b, packet2.c))
+    print("packet 2 dump: {}".format(packet2.dumps()))
 
 
 if __name__ == "__main__":

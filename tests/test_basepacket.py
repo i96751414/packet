@@ -1,20 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
 import sys
 import math
+import packet
 import pytest
 import threading
-
-sys.path.insert(0, os.path.dirname((os.path.dirname(__file__))))
-
-import packet
-
-try:
-    from utils import *
-except ImportError:
-    from .utils import *
+from tests import utils
 
 
 def test_packet_safe_eval():
@@ -23,10 +15,10 @@ def test_packet_safe_eval():
     assert packet.safe_eval(repr(tuple())) == tuple()
     assert packet.safe_eval(repr(set())) == set()
     assert packet.safe_eval(repr(str())) == str()
-    assert packet.safe_eval(repr(unicode())) == unicode()
+    assert packet.safe_eval(repr(utils.Unicode())) == utils.Unicode()
     assert packet.safe_eval(repr(bytes())) == bytes()
     assert packet.safe_eval(repr(int())) == int()
-    assert packet.safe_eval(repr(long())) == long()
+    assert packet.safe_eval(repr(utils.Long())) == utils.Long()
     assert packet.safe_eval(repr(float())) == float()
     assert packet.safe_eval(repr(complex())) == complex()
     assert packet.safe_eval(repr(bool())) == bool()
@@ -61,31 +53,31 @@ def test_set_ast_serializer():
 
 
 def test_ast_packet():
-    packet1 = ASTTestPacket()
-    packet2 = ASTTestPacket()
+    packet1 = utils.ASTTestPacket()
+    packet2 = utils.ASTTestPacket()
 
     # Modify values
-    modify_ast_test_packet(packet1)
+    utils.modify_ast_test_packet(packet1)
 
     packet2.loads(packet1.dumps())
 
-    check_ast_test_packet(packet1, packet2)
+    utils.check_ast_test_packet(packet1, packet2)
 
 
 def test_json_packet():
-    packet1 = JSONTestPacket()
-    packet2 = JSONTestPacket()
+    packet1 = utils.JSONTestPacket()
+    packet2 = utils.JSONTestPacket()
 
     # Modify values
-    modify_json_test_packet(packet1)
+    utils.modify_json_test_packet(packet1)
 
     packet2.loads(packet1.dumps())
 
-    check_json_test_packets(packet1, packet2)
+    utils.check_json_test_packets(packet1, packet2)
 
 
 def test_undefined_attribute():
-    packet1 = JSONTestPacket()
+    packet1 = utils.JSONTestPacket()
     with pytest.raises(AttributeError):
         packet1.abc = "abc"
 
@@ -106,34 +98,34 @@ def test_send_to_and_receive_from():
     # Create a dummy connection just for tests
     connection = DummyConnection()
 
-    packet1 = JSONTestPacket()
-    packet2 = JSONTestPacket()
+    packet1 = utils.JSONTestPacket()
+    packet2 = utils.JSONTestPacket()
 
     # Modify values
-    modify_json_test_packet(packet1)
+    utils.modify_json_test_packet(packet1)
 
     # Send packet1 data to packet2
     # Same as packet2.loads(packet1.dumps())
     packet1.send_to(connection)
     packet2.receive_from(connection)
 
-    check_json_test_packets(packet1, packet2)
+    utils.check_json_test_packets(packet1, packet2)
 
 
 def test_delattr():
-    packet1 = JSONTestPacket()
+    packet1 = utils.JSONTestPacket()
     with pytest.raises(AttributeError):
         del packet1.tuple
 
 
 def test_lock_acquire_and_release():
-    packet1 = JSONTestPacket()
+    packet1 = utils.JSONTestPacket()
 
     # Get lock so we can change values first
     packet1.lock_acquire()
 
     # Launch thread
-    thread = threading.Thread(target=modify_json_test_packet, args=(packet1,))
+    thread = threading.Thread(target=utils.modify_json_test_packet, args=(packet1,))
     thread.start()
 
     # Modify values

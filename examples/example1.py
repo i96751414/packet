@@ -55,7 +55,7 @@ def example1():
     packet1.send_to(connection)
     packet2.receive_from(connection)
 
-    print("Packet 2 dump: %s" % packet2.dumps())
+    print("Packet 2 dump: {}".format(packet2.dumps()))
 
 
 if __name__ == "__main__":

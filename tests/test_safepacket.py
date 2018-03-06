@@ -1,18 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
 import sys
-import pytest
-
-sys.path.insert(0, os.path.dirname((os.path.dirname(__file__))))
-
 import packet
-
-try:
-    from utils import *
-except ImportError:
-    from .utils import *
+import pytest
+from tests import utils
 
 
 def test_set_cbc_mode():
@@ -42,7 +34,7 @@ def test_set_packet_encryption_key():
     assert packet.SafePacket.encryption_key == key
 
 
-class ASTTestSafePacket(ASTTestPacket, packet.SafePacket):
+class ASTTestSafePacket(utils.ASTTestPacket, packet.SafePacket):
     pass
 
 
@@ -55,15 +47,15 @@ def test_safe_packet():
         packet2 = ASTTestSafePacket()
 
         # Modify values
-        modify_ast_test_packet(packet1)
+        utils.modify_ast_test_packet(packet1)
 
         dump = packet1.dumps()
         for key in packet1.__dict__.keys():
             assert key.encode() not in dump
-        check_encrypted(dump)
+        utils.check_encrypted(dump)
         packet2.loads(dump)
 
-        check_ast_test_packet(packet1, packet2)
+        utils.check_ast_test_packet(packet1, packet2)
 
 
 def test_fail_decryption():
@@ -71,7 +63,7 @@ def test_fail_decryption():
     packet2 = ASTTestSafePacket()
 
     # Modify values
-    modify_ast_test_packet(packet1)
+    utils.modify_ast_test_packet(packet1)
 
     packet.set_packet_encryption_key("key1")
     dump = packet1.dumps()

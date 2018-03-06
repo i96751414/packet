@@ -9,7 +9,8 @@ from ._compat import get_items, string_types, with_metaclass
 
 # AST necessary imports
 from ast import parse, Expression
-from ast import Str, Num, Tuple, List, Set, Dict, Name, UnaryOp, UAdd, USub, BinOp, Add, Sub, Call
+from ast import Str, Num, Tuple, List, Set, Dict, Name, UnaryOp, UAdd, \
+    USub, BinOp, Add, Sub, Call
 
 try:
     from ast import Constant
@@ -102,7 +103,7 @@ def safe_eval(node_or_string):
                     return left + right
                 else:
                     return left - right
-        raise ValueError("malformed node or string: %s" % repr(node))
+        raise ValueError("malformed node or string: {}".format(repr(node)))
 
     return _convert(node_or_string)
 
@@ -188,7 +189,8 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
     @property
     def __tag__(self):
         """
-        Tag of current packet. This must be equal for all instances sharing data.
+        Tag of current packet. This must be equal for all instances
+        sharing data.
 
         :return: str
         """
@@ -337,7 +339,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
             if not isinstance(_data, dict):
                 raise UnknownPacket("Expected dictionary data")
             if tag not in _data:
-                raise InvalidData("Expected data with tag '%s'" % tag)
+                raise InvalidData("Expected data with tag '{}'".format(tag))
 
             self._update_dict(_data[tag])
         finally:
@@ -345,10 +347,10 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     def receive_from(self, conn, buffer_size=512):
         """
-        Receive data from a connection conn (typically a socket connection) by doing
-        conn.recv(buffer_size) and loads the received data into the packet.
-        If there is an error loading data or no data is obtained, returns False,
-        otherwise returns True.
+        Receive data from a connection conn (typically a socket connection)
+        by doing conn.recv(buffer_size) and loads the received data into the
+        packet. If there is an error loading data or no data is obtained,
+        returns False, otherwise returns True.
 
         :param conn: Socket connection
         :param buffer_size: int, Socket buffer size
@@ -368,7 +370,8 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
     def send_to(self, conn):
         """
         Send data to a connection conn (typically a socket connection).
-        If no connection, returns None, otherwise returns the same as conn.send(data).
+        If no connection, returns None, otherwise returns the same as
+        conn.send(data).
 
         :param conn: Socket connection
         :return: int, Bytes sent
@@ -385,11 +388,12 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         :param value: obj, value of attribute to set
         :return: None
         """
-        if getattr(self, _INITIALISED, False) and \
-                name not in self._get_attributes(self) and \
-                not isinstance(getattr(self.__class__, name, None), property):
-            raise AttributeError("'%s' is not an attribute of '%s' packet" % (
-                name, self.__class__.__name__))
+        if (getattr(self, _INITIALISED, False) and
+                name not in self._get_attributes(self) and
+                not isinstance(getattr(self.__class__, name, None), property)):
+            raise AttributeError(
+                "'{}' is not an attribute of '{}' packet".format(
+                    name, self.__class__.__name__))
 
         self.lock_acquire()
         try:
@@ -398,4 +402,4 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
             self.lock_release()
 
     def __delattr__(self, item):
-        raise AttributeError("Can't delete %s" % item)
+        raise AttributeError("Can't delete {}".format(item))

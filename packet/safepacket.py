@@ -116,7 +116,8 @@ class SafePacket(Packet):
 
     def dumps(self):
         """
-        Serialize packet object and encrypt it using the specified encryption_key and encryption_mode.
+        Serialize packet object and encrypt it using the specified
+        encryption_key and encryption_mode.
 
         :return: bytes
         """
@@ -125,7 +126,8 @@ class SafePacket(Packet):
 
     def loads(self, data):
         """
-        Deserialize encrypted data using the specified encryption_key and encryption_mode and update packet object.
+        Deserialize encrypted data using the specified encryption_key and
+        encryption_mode and update packet object.
         Raises UnknownEncryption if not possible to decrypt the data.
         Raises UnknownPacket or InvalidData if the data is not deserializable.
 

@@ -58,7 +58,7 @@ packet1.float = 1.23
 # Send packet1 data to packet2
 packet2.loads(packet1.dumps())
 
-print("int: %d, float: %f" % (packet2.integer, packet2.float))
+print("int: {}, float: {}".format(packet2.integer, packet2.float))
 ```
 
 Output:

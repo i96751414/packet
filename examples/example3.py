@@ -50,8 +50,9 @@ def example3():
     # Send packet1 data to packet2
     packet2.loads(packet1.dumps())
 
-    print("packet2.a: %s, packet2.c.inner_a: %s, packet2.d: %s" % (packet2.a, packet2.c.inner_a, packet2.d))
-    print("packet 2 dump: %s" % packet2.dumps())
+    print("packet2.a: {}, packet2.c.inner_a: {}, packet2.d: {}".format(
+        packet2.a, packet2.c.inner_a, packet2.d))
+    print("packet 2 dump: {}".format(packet2.dumps()))
 
     # What if we change packet1.b from None to other thing?
     packet1.b = "not None"
@@ -59,7 +60,7 @@ def example3():
         # Send packet1 data to packet2 again
         packet2.loads(packet1.dumps())
     except InvalidData as e:
-        print("\nInvalid data error: %s" % e)
+        print("\nInvalid data error: {}".format(e))
 
 
 if __name__ == "__main__":
