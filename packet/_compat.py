@@ -13,7 +13,8 @@ if PY3:
     def get_items(o):
         return o.items()
 else:
-    string_types = basestring,
+    # noinspection PyUnresolvedReferences
+    string_types = basestring,  # NOQA
 
     def get_items(o):
         return o.iteritems()

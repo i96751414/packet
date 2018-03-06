@@ -7,9 +7,9 @@ from packet._compat import PY2
 
 if PY2:
     # noinspection PyUnresolvedReferences
-    Unicode = unicode
+    Unicode = unicode  # NOQA
     # noinspection PyUnresolvedReferences
-    Long = long
+    Long = long  # NOQA
 else:
     Unicode = str
     Long = int
