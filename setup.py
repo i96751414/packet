@@ -17,5 +17,7 @@ setup(
     author_email=__email__,
     packages=["packet"],
     install_requires=["pyaes"],
+    tests_require=["pytest"],
+    python_requires=">=2.7",
     include_package_data=True
 )
