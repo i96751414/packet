@@ -12,7 +12,7 @@ from .safepacket import SafePacket, set_packet_encryption_key, \
 
 __author__ = "i96751414"
 __email__ = "i96751414@gmail.com"
-__version__ = "0.0.1 (12/02/2018)"
+__version__ = "0.0.1"
 
 __all__ = [
     "Packet", "SafePacket", "InspectedPacket", "InspectedSafePacket",
