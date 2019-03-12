@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
 import math
-import packet
-import pytest
+import sys
 import threading
+
+import pytest
+
+import packet
 from tests import utils
 
 

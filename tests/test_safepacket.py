@@ -2,8 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-import packet
+
 import pytest
+
+import packet
 from tests import utils
 
 

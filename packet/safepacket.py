@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-import pyaes
 import hashlib
+import os
+
+import pyaes
+
 from .basepacket import Packet
 from .utils import CTR_MODE, CBC_MODE, UnknownEncryption
 

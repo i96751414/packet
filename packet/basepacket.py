@@ -3,14 +3,14 @@
 
 import json
 import threading
-from .utils import UnknownPacket, InvalidData, NotSerializable
-from .utils import JSON_SERIALIZER, AST_SERIALIZER
-from ._compat import get_items, string_types, with_metaclass
-
-# AST necessary imports
-from ast import parse, Expression
 from ast import Str, Num, Tuple, List, Set, Dict, Name, UnaryOp, UAdd, \
     USub, BinOp, Add, Sub, Call
+# AST necessary imports
+from ast import parse, Expression
+
+from ._compat import get_items, string_types, with_metaclass
+from .utils import JSON_SERIALIZER, AST_SERIALIZER
+from .utils import UnknownPacket, InvalidData, NotSerializable
 
 try:
     from ast import Constant
@@ -142,8 +142,8 @@ def set_packet_serializer(serializer):
     Packet.packet_serializer = serializer
 
 
-_INITIALISED = "_done_init_packet"
-_LOCK = "_packet_lock"
+_INITIALISED = "__done_init_packet"
+_LOCK = "__packet_lock"
 
 
 def _check_dict_keys(obj):
@@ -176,6 +176,7 @@ class _PacketMetaClass(type):
         return self
 
 
+# noinspection PyCallByClass
 class Packet(with_metaclass(_PacketMetaClass, object)):
     """
     General packet class. This is the main "Packet" class.
@@ -196,18 +197,26 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         """
         return self.__class__.__name__
 
+    @property
+    def lock(self):
+        """
+        Get packet lock.
+
+        :return: RLock
+        """
+        lock = getattr(self, _LOCK, None)
+        if lock is None:
+            lock = threading.RLock()
+            object.__setattr__(self, _LOCK, lock)
+        return lock
+
     def lock_acquire(self, *args, **kwargs):
         """
         Acquire a lock for packet. The same as threading.RLock.acquire.
 
         :return: None
         """
-        if hasattr(self, _LOCK):
-            getattr(self, _LOCK).acquire(*args, **kwargs)
-        else:
-            lock = threading.RLock()
-            object.__setattr__(self, _LOCK, lock)
-            lock.acquire(*args, **kwargs)
+        return self.lock.acquire(*args, **kwargs)
 
     def lock_release(self):
         """
@@ -215,7 +224,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
         :return: None
         """
-        getattr(self, _LOCK).release()
+        return self.lock.release()
 
     @staticmethod
     def _get_attributes(obj):
@@ -223,6 +232,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         Get all the attributes of a given object as a set.
 
         :param obj: object to check attributes
+        :type obj: object
         :return: set, attributes
         """
         attributes = set()

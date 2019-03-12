@@ -17,6 +17,7 @@ Example 3 - InspectedPacket:
 """
 
 import datetime
+
 from packet import InspectedPacket, InvalidData, set_ast_serializer
 
 set_ast_serializer()

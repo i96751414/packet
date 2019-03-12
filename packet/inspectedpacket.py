@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import types
 import inspect
+import types
+
 from .basepacket import Packet
 from .safepacket import SafePacket
 from .utils import NotSerializable, InvalidData, JSON_SERIALIZER, AST_SERIALIZER
