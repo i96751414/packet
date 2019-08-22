@@ -34,9 +34,9 @@ def check_encrypted(data):
 
 
 class JSONTestPacket(packet.Packet):
-    packet_serializer = packet.JSON_SERIALIZER
-
     def __init__(self):
+        self.set_json_serializer()
+
         self.dict = dict()
         self.list = list()
         self.tuple = tuple()
@@ -98,10 +98,9 @@ def modify_json_test_packet(packet1):
 
 
 class ASTTestPacket(JSONTestPacket):
-    packet_serializer = packet.AST_SERIALIZER
-
     def __init__(self):
         super(ASTTestPacket, self).__init__()
+        self.set_ast_serializer()
 
         self.set = set()
         self.bytes = bytes()

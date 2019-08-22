@@ -1,161 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import json
+import hashlib
+import os
 import threading
-from ast import Str, Num, Tuple, List, Set, Dict, Name, UnaryOp, UAdd, \
-    USub, BinOp, Add, Sub, Call
-# AST necessary imports
-from ast import parse, Expression
 
-from packet._compat import get_items, string_types, with_metaclass
-from packet.utils import JSON_SERIALIZER, AST_SERIALIZER
-from packet.utils import UnknownPacket, InvalidData, NotSerializable
+import pyaes
 
-try:
-    from ast import Constant
-except ImportError:
-    class Constant(object):
-        value = None
-
-try:
-    from ast import NameConstant
-except ImportError:
-    class NameConstant(object):
-        value = None
-
-try:
-    from ast import Bytes
-except ImportError:
-    class Bytes(object):
-        s = None
-
-_NUM_TYPES = (int, float, complex)
-
-# None, True and False are treated as Names in Python 2+
-_SAFE_NAMES = {
-    "None": None, "True": True, "False": False,
-    "inf": float("inf"), "nan": float("nan"),
-    "infj": complex("infj"), "nanj": complex("nanj"),
-}
-
-_SAFE_CALLS = {
-    "set": set,
-}
-
-
-def safe_eval(node_or_string):
-    """
-    Safely evaluate an expression node or a string containing a Python
-    expression. The string or node provided may only consist of the following
-    Python literal structures: strings, bytes, numbers, tuples, lists, dicts,
-    sets, booleans, and None.
-
-    Note: This is a modified version of the ast.literal_eval function from
-    Python 3.6
-
-    :type node_or_string: str, node
-    :param node_or_string: expression string or node
-    :return: evaluated
-    """
-    if isinstance(node_or_string, string_types):
-        node_or_string = parse(node_or_string, mode="eval")
-    if isinstance(node_or_string, Expression):
-        node_or_string = node_or_string.body
-
-    def _convert(node):
-        if isinstance(node, Constant):
-            return node.value
-        elif isinstance(node, (Str, Bytes)):
-            return node.s
-        elif isinstance(node, Num):
-            return node.n
-        elif isinstance(node, Tuple):
-            return tuple(map(_convert, node.elts))
-        elif isinstance(node, List):
-            return list(map(_convert, node.elts))
-        elif isinstance(node, Set):
-            return set(map(_convert, node.elts))
-        elif isinstance(node, Dict):
-            return dict((_convert(k), _convert(v)) for k, v
-                        in zip(node.keys, node.values))
-        elif isinstance(node, Name):
-            if node.id in _SAFE_NAMES:
-                return _SAFE_NAMES[node.id]
-        elif isinstance(node, NameConstant):
-            return node.value
-        elif isinstance(node, Call):
-            if node.func.id in _SAFE_CALLS:
-                args = [_convert(arg) for arg in node.args]
-                return _SAFE_CALLS[node.func.id](*args)
-        elif isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
-            operand = _convert(node.operand)
-            if isinstance(operand, _NUM_TYPES):
-                if isinstance(node.op, UAdd):
-                    return + operand
-                else:
-                    return - operand
-        elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
-            left = _convert(node.left)
-            right = _convert(node.right)
-            if isinstance(left, _NUM_TYPES) and isinstance(right, _NUM_TYPES):
-                if isinstance(node.op, Add):
-                    return left + right
-                else:
-                    return left - right
-        raise ValueError("malformed node or string: {}".format(repr(node)))
-
-    return _convert(node_or_string)
-
-
-def set_json_serializer():
-    """
-    Set JSON_SERIALIZER as the serializer to be used in all packets.
-    Same as set_packet_serializer(JSON_SERIALIZER).
-
-    :return: None
-    """
-    Packet.packet_serializer = JSON_SERIALIZER
-
-
-def set_ast_serializer():
-    """
-    Set AST_SERIALIZER as the serializer to be used in all packets.
-    Same as set_packet_serializer(AST_SERIALIZER).
-
-    :return: None
-    """
-    Packet.packet_serializer = AST_SERIALIZER
-
-
-def set_packet_serializer(serializer):
-    """
-    Set serializer to be used in all packets.
-    Serializer must be either JSON_SERIALIZER or AST_SERIALIZER.
-
-    :param serializer: int, Serializer to use
-    :return: None
-    """
-    if not isinstance(serializer, int) or (
-            serializer != JSON_SERIALIZER and serializer != AST_SERIALIZER):
-        raise ValueError("Unknown serializer")
-    Packet.packet_serializer = serializer
-
-
-def _check_dict_keys(obj):
-    """
-    Check if all obj keys are strings, so it can be json serialized.
-    If one of the keys is not string, raise TypeError.
-
-    :param obj: dict, Dict to verify
-    :return: None
-    """
-
-    for k, v in get_items(obj):
-        if not isinstance(k, string_types):
-            raise TypeError("Only string keys are allowed in Packet dicts")
-        if isinstance(v, dict):
-            _check_dict_keys(v)
+from packet._compat import get_items, with_metaclass
+from packet.serializers import json_serializer, ast_serializer, _get_attributes, _Serializable, _Serializer
+from packet.utils import CTR_MODE, CBC_MODE, UnknownEncryption
+from packet.utils import UnknownPacket, InvalidData
 
 
 class _PacketMetaClass(type):
@@ -171,21 +26,29 @@ class _PacketMetaClass(type):
 
 
 # noinspection PyCallByClass
-class Packet(with_metaclass(_PacketMetaClass, object)):
+class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
     """
     General packet class. This is the main "Packet" class.
     Every packet classes should inherit from this one.
     """
 
-    packet_serializer = JSON_SERIALIZER
-
-    __slots__ = ["_packet_lock", "_packet_initialised"]
-
     def __new__(cls, *args, **kwargs):
         self = super(Packet, cls).__new__(cls, *args, **kwargs)
+        object.__setattr__(self, "_packet_serializer", json_serializer)
         object.__setattr__(self, "_packet_lock", threading.RLock())
         object.__setattr__(self, "_packet_initialised", False)
         return self
+
+    def set_json_serializer(self):
+        self.set_serializer(json_serializer)
+
+    def set_ast_serializer(self):
+        self.set_serializer(ast_serializer)
+
+    def set_serializer(self, serializer):
+        if not isinstance(serializer, _Serializer):
+            raise TypeError("Invalid serializer")
+        object.__setattr__(self, "_packet_serializer", serializer)
 
     @property
     def __tag__(self):
@@ -197,31 +60,13 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         """
         return self.__class__.__name__
 
-    @staticmethod
-    def _get_attributes(obj):
-        """
-        Get all the attributes of a given object as a set.
-
-        :param obj: object to check attributes
-        :type obj: object
-        :return: tuple, attributes
-        """
-        attributes = {slot for cls in (getattr(obj.__class__, "__mro__", ()))
-                      for slot in getattr(cls, "__slots__", ()) if hasattr(obj, slot)}
-        attributes.update(getattr(obj, "__dict__", {}))
-        if isinstance(obj, Packet):
-            for a in Packet.__slots__:
-                if a in attributes:
-                    attributes.remove(a)
-        return attributes
-
     def _generate_dict(self):
         """
         Return packet as a dictionary
 
         :return: dict
         """
-        return {attribute: getattr(self, attribute) for attribute in self._get_attributes(self)}
+        return {attribute: getattr(self, attribute) for attribute in _get_attributes(self)}
 
     def dump(self, fp):
         """
@@ -244,19 +89,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         with self._packet_lock:
             _data = self._generate_dict()
 
-        if self.packet_serializer == AST_SERIALIZER:
-            try:
-                data = repr({self.__tag__: _data})
-                safe_eval(data)
-            except ValueError as e:
-                raise NotSerializable(e)
-        else:
-            try:
-                _check_dict_keys(_data)
-                data = json.dumps({self.__tag__: _data})
-            except TypeError as e:
-                raise NotSerializable(e)
-        return data.encode()
+        return self._packet_serializer.dumps({self.__tag__: _data})
 
     def _update_dict(self, data):
         """
@@ -267,7 +100,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         """
         if not isinstance(data, dict):
             raise InvalidData("Expected dictionary data")
-        if set(data) != self._get_attributes(self):
+        if set(data) != _get_attributes(self):
             raise InvalidData("Attributes do not match")
         for k, v in get_items(data):
             object.__setattr__(self, k, v)
@@ -294,12 +127,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         with self._packet_lock:
             tag = self.__tag__
             try:
-                if isinstance(data, bytes):
-                    data = data.decode()
-                if self.packet_serializer == AST_SERIALIZER:
-                    _data = safe_eval(data)
-                else:
-                    _data = json.loads(data)
+                _data = self._packet_serializer.loads(data)
             except Exception as e:
                 raise UnknownPacket(e)
             if not isinstance(_data, dict):
@@ -352,10 +180,10 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         :param value: obj, value of attribute to set
         :return: None
         """
-        if name in Packet.__slots__:
+        if name in _Serializable.__slots__:
             raise AttributeError("'{}' is not a valid attribute name")
 
-        if (self._packet_initialised and name not in self._get_attributes(self) and
+        if (self._packet_initialised and name not in _get_attributes(self) and
                 not isinstance(getattr(self.__class__, name, None), property)):
             raise AttributeError("'{}' is not an attribute of '{}' packet".format(name, self.__class__.__name__))
 
@@ -364,3 +192,177 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     def __delattr__(self, item):
         raise AttributeError("Can't delete {}".format(item))
+
+
+class InspectedPacket(Packet):
+    """
+    Inspected packet class
+    """
+
+    def _generate_dict(self):
+        """
+        Return packet as a dictionary
+
+        :return: dict
+        """
+        return self._packet_serializer.serialize_object(self)
+
+    def _update_dict(self, data):
+        """
+        Update packet dictionary with the given data.
+
+        :param data: dict, new data
+        :return: None
+        """
+        self._packet_serializer.deserialize_object(self, data)
+
+
+def _random_iv():
+    """
+    Generate a random initialization vector (suitable for cryptographic use).
+
+    :return: bytes, iv
+    """
+    return os.urandom(16)
+
+
+class _CTRCipher:
+    """
+    Counter (CTR) Cipher mode
+    """
+
+    def __init__(self, key):
+        if isinstance(key, str):
+            key = key.encode()
+        self.__key = hashlib.sha256(key).digest()
+
+    def encrypt(self, raw):
+        return pyaes.AESModeOfOperationCTR(self.__key).encrypt(raw)
+
+    def decrypt(self, enc):
+        return pyaes.AESModeOfOperationCTR(self.__key).decrypt(enc)
+
+
+class _CBCCipher:
+    """
+    Cipher Block Chaining (CBC) mode
+    """
+
+    def __init__(self, key, block_size=16):
+        if isinstance(key, str):
+            key = key.encode()
+        self.__key = hashlib.sha256(key).digest()
+        self.__block_size = block_size
+
+    def encrypt(self, raw):
+        iv = _random_iv()
+        aes = pyaes.Encrypter(pyaes.AESModeOfOperationCBC(self.__key, iv=iv))
+        data = aes.feed(raw)
+        data += aes.feed()
+        return iv + data
+
+    def decrypt(self, enc):
+        iv = enc[:16]
+        aes = pyaes.Decrypter(pyaes.AESModeOfOperationCBC(self.__key, iv=iv))
+        data = aes.feed(enc[16:])
+        data += aes.feed()
+        return data
+
+
+def set_cbc_mode():
+    """
+    Set CBC_MODE as the encryption mode to be used when serializing packets.
+    Same as set_packet_encryption_mode(CBC_MODE).
+
+    :return: None
+    """
+    SafePacket.encryption_mode = CBC_MODE
+
+
+def set_ctr_mode():
+    """
+    Set CTR_MODE as the encryption mode to be used when serializing packets.
+    Same as set_packet_encryption_mode(CTR_MODE).
+
+    :return: None
+    """
+    SafePacket.encryption_mode = CTR_MODE
+
+
+def set_packet_encryption_key(key):
+    """
+    Set encryption key to be used when serializing packets.
+    Encryption key must be a string.
+
+    :param key: str, Encryption key
+    :return: None
+    """
+    if not isinstance(key, str):
+        raise ValueError("Key must be a string")
+    SafePacket.encryption_key = key
+
+
+def set_packet_encryption_mode(mode):
+    """
+    Set encryption mode to be used when serializing packets.
+    Encryption mode must be either CBC_MODE or CTR_MODE.
+
+    :param mode: int, Encryption mode
+    :return: None
+    """
+    if not isinstance(mode, int) or (mode != CBC_MODE and mode != CTR_MODE):
+        raise ValueError("Unknown mode")
+    SafePacket.encryption_mode = mode
+
+
+class SafePacket(Packet):
+    """
+    General SafePacket class
+    """
+
+    encryption_key = ""
+    encryption_mode = CTR_MODE
+
+    def dumps(self):
+        """
+        Serialize packet object and encrypt it using the specified
+        encryption_key and encryption_mode.
+
+        :return: bytes
+        """
+        cipher = self.__get_cipher()
+        return cipher.encrypt(super(SafePacket, self).dumps())
+
+    def loads(self, data):
+        """
+        Deserialize encrypted data using the specified encryption_key and
+        encryption_mode and update packet object.
+        Raises UnknownEncryption if not possible to decrypt the data.
+        Raises UnknownPacket or InvalidData if the data is not deserializable.
+
+        :param data: bytes, Encrypted data
+        :return: None
+        """
+        cipher = self.__get_cipher()
+        try:
+            decoded = cipher.decrypt(data)
+        except Exception as e:
+            raise UnknownEncryption(e)
+        return super(SafePacket, self).loads(decoded)
+
+    def __get_cipher(self):
+        """
+        Get the cipher as specified by encryption_mode.
+        If no cipher is specified, return the default cipher (CTR).
+
+        :return: cipher
+        """
+        if self.encryption_mode == CBC_MODE:
+            return _CBCCipher(self.encryption_key)
+        return _CTRCipher(self.encryption_key)
+
+
+class InspectedSafePacket(InspectedPacket, SafePacket):
+    """
+    Inspected and safe packet class
+    """

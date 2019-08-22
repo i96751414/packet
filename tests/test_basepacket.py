@@ -34,26 +34,6 @@ def test_packet_safe_eval():
     assert packet.safe_eval(repr(complex("inf-infj"))) == complex("inf-infj")
 
 
-def test_set_json_serializer():
-    packet.Packet.packet_serializer = None
-    packet.set_json_serializer()
-    assert packet.Packet.packet_serializer == packet.JSON_SERIALIZER
-
-    packet.Packet.packet_serializer = None
-    packet.set_packet_serializer(packet.JSON_SERIALIZER)
-    assert packet.Packet.packet_serializer == packet.JSON_SERIALIZER
-
-
-def test_set_ast_serializer():
-    packet.Packet.packet_serializer = None
-    packet.set_ast_serializer()
-    assert packet.Packet.packet_serializer == packet.AST_SERIALIZER
-
-    packet.Packet.packet_serializer = None
-    packet.set_packet_serializer(packet.AST_SERIALIZER)
-    assert packet.Packet.packet_serializer == packet.AST_SERIALIZER
-
-
 def test_ast_packet():
     packet1 = utils.ASTTestPacket()
     packet2 = utils.ASTTestPacket()
