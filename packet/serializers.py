@@ -5,7 +5,7 @@ import json
 import types
 
 from packet._compat import string_types, get_items
-from packet.ast import safe_eval
+from packet.evaluate import safe_eval
 from packet.utils import NotSerializable, InvalidData
 
 
@@ -240,6 +240,8 @@ class _JsonSerializer(_Serializer):
         return data.encode()
 
     def loads(self, data):
+        if isinstance(data, bytes):
+            data = data.decode()
         return json.loads(data)
 
     def verify_data_types(self, expected, data_type):
