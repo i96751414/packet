@@ -104,14 +104,6 @@ int: 123, float: 1.23
 
     Deserialize ```data``` and update packet object. Raises ```UnknownPacket``` or ```InvalidData``` if the data is not deserializable.
 
-- .**lock_acquire**(\*args, \*\*kwargs)
-
-    Acquire a lock for packet. The same as threading.RLock.acquire.
-
-- .**lock_release**()
-
-    Release a lock from packet. The same as threading.RLock.release.
-
 - .**receive_from**(conn, buffer_size=512)
 
     Receive data from a connection ```conn``` (typically a socket connection) by doing ```conn.recv(buffer_size)``` and loads the received data into the packet. If there is an error loading data or no data is obtained, returns ```False```, otherwise returns ```True```.

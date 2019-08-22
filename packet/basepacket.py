@@ -142,10 +142,6 @@ def set_packet_serializer(serializer):
     Packet.packet_serializer = serializer
 
 
-_INITIALISED = "__done_init_packet"
-_LOCK = "__packet_lock"
-
-
 def _check_dict_keys(obj):
     """
     Check if all obj keys are strings, so it can be json serialized.
@@ -169,10 +165,8 @@ class _PacketMetaClass(type):
     """
 
     def __call__(cls, *args, **kwargs):
-        # Do __init__
         self = super(_PacketMetaClass, cls).__call__(*args, **kwargs)
-        # Set initialised flag
-        object.__setattr__(self, _INITIALISED, True)
+        object.__setattr__(self, "_packet_initialised", True)
         return self
 
 
@@ -185,7 +179,13 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
     packet_serializer = JSON_SERIALIZER
 
-    __slots__ = [_INITIALISED, _LOCK]
+    __slots__ = ["_packet_lock", "_packet_initialised"]
+
+    def __new__(cls, *args, **kwargs):
+        self = super(Packet, cls).__new__(cls, *args, **kwargs)
+        object.__setattr__(self, "_packet_lock", threading.RLock())
+        object.__setattr__(self, "_packet_initialised", False)
+        return self
 
     @property
     def __tag__(self):
@@ -197,35 +197,6 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         """
         return self.__class__.__name__
 
-    @property
-    def lock(self):
-        """
-        Get packet lock.
-
-        :return: RLock
-        """
-        lock = getattr(self, _LOCK, None)
-        if lock is None:
-            lock = threading.RLock()
-            object.__setattr__(self, _LOCK, lock)
-        return lock
-
-    def lock_acquire(self, *args, **kwargs):
-        """
-        Acquire a lock for packet. The same as threading.RLock.acquire.
-
-        :return: None
-        """
-        return self.lock.acquire(*args, **kwargs)
-
-    def lock_release(self):
-        """
-        Release a lock from packet. The same as threading.RLock.release.
-
-        :return: None
-        """
-        return self.lock.release()
-
     @staticmethod
     def _get_attributes(obj):
         """
@@ -233,23 +204,15 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
         :param obj: object to check attributes
         :type obj: object
-        :return: set, attributes
+        :return: tuple, attributes
         """
-        attributes = set()
-        if hasattr(obj.__class__, "__mro__"):
-            for cls in obj.__class__.__mro__:
-                for slot in getattr(cls, "__slots__", []):
-                    if hasattr(obj, slot):
-                        attributes.add(slot)
-
+        attributes = {slot for cls in (getattr(obj.__class__, "__mro__", ()))
+                      for slot in getattr(cls, "__slots__", ()) if hasattr(obj, slot)}
         attributes.update(getattr(obj, "__dict__", {}))
-
         if isinstance(obj, Packet):
-            if _INITIALISED in attributes:
-                attributes.remove(_INITIALISED)
-            if _LOCK in attributes:
-                attributes.remove(_LOCK)
-
+            for a in Packet.__slots__:
+                if a in attributes:
+                    attributes.remove(a)
         return attributes
 
     def _generate_dict(self):
@@ -258,10 +221,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
 
         :return: dict
         """
-        _dict = {}
-        for attribute in self._get_attributes(self):
-            _dict[attribute] = getattr(self, attribute)
-        return _dict
+        return {attribute: getattr(self, attribute) for attribute in self._get_attributes(self)}
 
     def dump(self, fp):
         """
@@ -281,11 +241,8 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         :return: bytes
         """
 
-        self.lock_acquire()
-        try:
+        with self._packet_lock:
             _data = self._generate_dict()
-        finally:
-            self.lock_release()
 
         if self.packet_serializer == AST_SERIALIZER:
             try:
@@ -334,8 +291,7 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         :param data: bytes/str
         :return: None
         """
-        self.lock_acquire()
-        try:
+        with self._packet_lock:
             tag = self.__tag__
             try:
                 if isinstance(data, bytes):
@@ -352,8 +308,6 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
                 raise InvalidData("Expected data with tag '{}'".format(tag))
 
             self._update_dict(_data[tag])
-        finally:
-            self.lock_release()
 
     def receive_from(self, conn, buffer_size=512):
         """
@@ -398,18 +352,15 @@ class Packet(with_metaclass(_PacketMetaClass, object)):
         :param value: obj, value of attribute to set
         :return: None
         """
-        if (getattr(self, _INITIALISED, False) and
-                name not in self._get_attributes(self) and
-                not isinstance(getattr(self.__class__, name, None), property)):
-            raise AttributeError(
-                "'{}' is not an attribute of '{}' packet".format(
-                    name, self.__class__.__name__))
+        if name in Packet.__slots__:
+            raise AttributeError("'{}' is not a valid attribute name")
 
-        self.lock_acquire()
-        try:
+        if (self._packet_initialised and name not in self._get_attributes(self) and
+                not isinstance(getattr(self.__class__, name, None), property)):
+            raise AttributeError("'{}' is not an attribute of '{}' packet".format(name, self.__class__.__name__))
+
+        with self._packet_lock:
             object.__setattr__(self, name, value)
-        finally:
-            self.lock_release()
 
     def __delattr__(self, item):
         raise AttributeError("Can't delete {}".format(item))

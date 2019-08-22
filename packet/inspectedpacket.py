@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import inspect
 import types
 
 from packet.basepacket import Packet
@@ -39,9 +38,8 @@ def _is_instance_of_class(obj):
     :param obj: object to check
     :return: bool, is instance of class
     """
-    return ((hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and
-            not inspect.isroutine(obj) and not inspect.isclass(obj) and
-            not inspect.ismodule(obj))
+    return (hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and not isinstance(
+        obj, (type, types.BuiltinFunctionType, types.FunctionType, types.MethodType, types.ModuleType))
 
 
 def _can_be_reduced(obj):
@@ -199,10 +197,7 @@ class InspectedPacket(Packet):
                 raise InvalidData("Attribute type not supported: '{}'".format(type1))
 
     def __update_dict(self, obj, data):
-        if isinstance(self, Packet):
-            _setattr = object.__setattr__
-        else:
-            _setattr = setattr
+        _setattr = object.__setattr__ if isinstance(self, Packet) else setattr
 
         for attribute in self._get_attributes(obj):
             value = getattr(obj, attribute)

@@ -124,7 +124,8 @@ def test_lock_acquire_and_release():
     packet1 = utils.JSONTestPacket()
 
     # Get lock so we can change values first
-    packet1.lock_acquire()
+    # noinspection PyProtectedMember
+    packet1._packet_lock.acquire()
 
     # Launch thread
     thread = threading.Thread(target=utils.modify_json_test_packet, args=(packet1,))
@@ -134,7 +135,8 @@ def test_lock_acquire_and_release():
     packet1.str = "one two three"
 
     # Release lock
-    packet1.lock_release()
+    # noinspection PyProtectedMember
+    packet1._packet_lock.release()
 
     # Wait for thread to finish
     thread.join()
