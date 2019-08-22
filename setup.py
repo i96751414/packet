@@ -2,7 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 from setuptools import setup
-from packet import __author__, __email__, __version__
+
+__author__ = "i96751414"
+__email__ = "i96751414@gmail.com"
+__version__ = "0.0.1"
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -19,5 +22,4 @@ setup(
     install_requires=["pyaes"],
     tests_require=["pytest"],
     python_requires=">=2.7",
-    include_package_data=True
 )

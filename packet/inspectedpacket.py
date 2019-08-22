@@ -4,9 +4,9 @@
 import inspect
 import types
 
-from .basepacket import Packet
-from .safepacket import SafePacket
-from .utils import NotSerializable, InvalidData, JSON_SERIALIZER, AST_SERIALIZER
+from packet.basepacket import Packet
+from packet.safepacket import SafePacket
+from packet.utils import NotSerializable, InvalidData, JSON_SERIALIZER, AST_SERIALIZER
 
 _json_allowed_types = {
     "dict": "object",

@@ -4,11 +4,12 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
-  - "3.7-dev"
+  - "3.7"
+  - "3.8-dev"
 
 # Install dependencies
 install:
-  - pip install -r requirements.txt
+  - pip install -e .
   - pip install flake8 pytest
 
 # Run tests

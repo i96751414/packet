@@ -8,9 +8,9 @@ from ast import Str, Num, Tuple, List, Set, Dict, Name, UnaryOp, UAdd, \
 # AST necessary imports
 from ast import parse, Expression
 
-from ._compat import get_items, string_types, with_metaclass
-from .utils import JSON_SERIALIZER, AST_SERIALIZER
-from .utils import UnknownPacket, InvalidData, NotSerializable
+from packet._compat import get_items, string_types, with_metaclass
+from packet.utils import JSON_SERIALIZER, AST_SERIALIZER
+from packet.utils import UnknownPacket, InvalidData, NotSerializable
 
 try:
     from ast import Constant

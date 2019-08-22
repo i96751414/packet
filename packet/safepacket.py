@@ -6,8 +6,8 @@ import os
 
 import pyaes
 
-from .basepacket import Packet
-from .utils import CTR_MODE, CBC_MODE, UnknownEncryption
+from packet.basepacket import Packet
+from packet.utils import CTR_MODE, CBC_MODE, UnknownEncryption
 
 
 def _random_iv():
