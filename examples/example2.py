@@ -12,11 +12,8 @@ Example 2 - SafePacket:
     the same.
 """
 
-from packet import SafePacket, set_json_serializer, set_cbc_mode, set_packet_encryption_key
+from packet import SafePacket, set_cbc_mode, set_packet_encryption_key
 
-# Set json serializer as the serializer to be used in all packets from now on
-# This is not required, as this is the default serializer
-set_json_serializer()
 # Set Cipher Block Chaining mode
 set_cbc_mode()
 # Set encryption key
@@ -25,6 +22,9 @@ set_packet_encryption_key("just-a-key")
 
 class DummyPacket(SafePacket):
     def __init__(self):
+        # This is not necessary, as json_serializer is the default serializer
+        self.set_json_serializer()
+
         self.a = None
         self.b = None
         self.c = None

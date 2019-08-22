@@ -18,9 +18,7 @@ Example 3 - InspectedPacket:
 
 import datetime
 
-from packet import InspectedPacket, InvalidData, set_ast_serializer
-
-set_ast_serializer()
+from packet import InspectedPacket, InvalidData
 
 
 class InnerClass(object):
@@ -32,6 +30,8 @@ class InnerClass(object):
 
 class DummyPacket(InspectedPacket):
     def __init__(self):
+        self.set_ast_serializer()
+
         self.a = 1.1
         self.b = None  # Avoid using None, as it can´t be changed
         self.c = InnerClass()

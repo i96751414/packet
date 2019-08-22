@@ -13,14 +13,13 @@ Example 1 - Packet:
     the same. This is the reason that Packet only allows basic types.
 """
 
-from packet import Packet, set_ast_serializer
-
-# Set ast serializer as the serializer to be used in all packets from now on
-set_ast_serializer()
+from packet import Packet
 
 
 class DummyPacket(Packet):
     def __init__(self):
+        self.set_ast_serializer()
+
         self.bytes = b"123"
         self.complex = 123j
         self.tuple = (123,)
