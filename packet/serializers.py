@@ -131,6 +131,9 @@ def _get_attributes(obj):
 class _Serializer(object):
     def __init__(self, allowed_types):
         self._allowed_types = allowed_types
+        self._simple_type = 1
+        self._class_type = 2
+        self._reduce_type = 3
 
     def dumps(self, data):
         raise NotImplementedError("abstract methods must be implemented")
@@ -145,67 +148,58 @@ class _Serializer(object):
         raise NotImplementedError("abstract methods must be implemented")
 
     def serialize_object(self, obj):
-        _dict = {}
-        for attribute in _get_attributes(obj):
-            value = getattr(obj, attribute)
-            t = _type_string(value)
-            if self.is_serializable(t):
-                _dict[attribute] = value
-            elif _is_instance_of_class(value):
-                _dict[attribute] = self.serialize_object(value)
-            elif _can_be_reduced(value):
-                _dict[attribute] = _get_reduced(value)[1:]
-            else:
-                raise NotSerializable("Attribute type not supported: '{}'".format(t))
-        return _dict
+        t = _type_string(obj)
+        if self.is_serializable(t):
+            return {self._simple_type: obj}
+        elif _is_instance_of_class(obj):
+            return {self._class_type: {attribute: self.serialize_object(getattr(obj, attribute))
+                                       for attribute in _get_attributes(obj)}}
+        elif _can_be_reduced(obj):
+            return {self._reduce_type: _get_reduced(obj)[1:]}
+
+        raise NotSerializable("Attribute type not supported: '{}'".format(t))
 
     def deserialize_object(self, obj, data):
         self._is_deserializable(obj, data)
-        self._deserialize_object(obj, data)
+        return self._deserialize_object(obj, data)
 
     def _is_deserializable(self, obj, data):
-        if not isinstance(data, dict):
-            raise InvalidData("Expected dictionary data")
-        attributes = _get_attributes(obj)
-        if attributes != set(data):
-            raise InvalidData("Attributes do not match")
-        for attribute in attributes:
-            value = getattr(obj, attribute)
-            type1 = _type_string(value)
-            type2 = _type_string(data[attribute])
-
-            if self.verify_data_types(type1, type2):
-                continue
-
-            elif _is_instance_of_class(value):
-                if type2 != "dict":
-                    raise InvalidData("Expected dictionary data for attribute '{}'".format(attribute))
-                self._is_deserializable(value, data[attribute])
-
-            elif _can_be_reduced(value):
-                if type2 != "list" and type2 != "tuple":
-                    raise InvalidData("Expected list/tuple for attribute '{}'".format(attribute))
+        for s_type, serialized in get_items(data):
+            if s_type == self._simple_type:
+                self.verify_data_types(_type_string(obj), _type_string(serialized))
+            elif s_type == self._class_type:
+                if not _is_instance_of_class(obj):
+                    raise InvalidData("Expected instance of class")
+                if not isinstance(serialized, dict):
+                    raise InvalidData("Expected dictionary data for attribute")
+                attributes = _get_attributes(obj)
+                if attributes != set(serialized):
+                    raise InvalidData("Attributes do not match")
+                for attribute in attributes:
+                    self._is_deserializable(getattr(obj, attribute), serialized[attribute])
+            elif s_type == self._reduce_type:
+                if not _can_be_reduced(obj):
+                    raise InvalidData("Object can not be reduced")
+                if not isinstance(serialized, (list, tuple)):
+                    raise InvalidData("Expected list/tuple for attribute")
                 try:
-                    _obj_from_reduce(value.__class__, *data[attribute])
+                    _obj_from_reduce(obj.__class__, *serialized)
                 except Exception as e:
                     raise InvalidData(e)
-
             else:
-                raise InvalidData("Attribute type not supported: '{}'".format(type1))
+                raise InvalidData("Unknown serialization type: '{}'".format(s_type))
 
     def _deserialize_object(self, obj, data):
-        _setattr = object.__setattr__ if isinstance(obj, _Serializable) else setattr
-
-        for attribute in _get_attributes(obj):
-            value = getattr(obj, attribute)
-            t = _type_string(value)
-
-            if self.is_serializable(t):
-                _setattr(obj, attribute, data[attribute])
-            elif _is_instance_of_class(value):
-                self._deserialize_object(value, data[attribute])
+        for s_type, serialized in get_items(data):
+            if s_type == self._simple_type:
+                return None if obj is None else obj.__class__(serialized)
+            elif s_type == self._class_type:
+                _setattr = object.__setattr__ if isinstance(obj, _Serializable) else setattr
+                for attribute in _get_attributes(obj):
+                    _setattr(obj, attribute, self._deserialize_object(getattr(obj, attribute), serialized[attribute]))
+                return obj
             else:
-                _setattr(obj, attribute, _obj_from_reduce(value.__class__, *data[attribute]))
+                return _obj_from_reduce(obj.__class__, *serialized)
 
 
 class _AstSerializer(_Serializer):
@@ -223,11 +217,8 @@ class _AstSerializer(_Serializer):
         return safe_eval(data)
 
     def verify_data_types(self, expected, data_type):
-        if expected in self._allowed_types:
-            if expected != data_type:
-                raise InvalidData("AST types not matching. Got '{}' but expected '{}'".format(data_type, expected))
-            return True
-        return False
+        if expected not in self._allowed_types or expected != data_type:
+            raise InvalidData("AST types not matching. Got '{}' but expected '{}'".format(data_type, expected))
 
 
 class _JsonSerializer(_Serializer):
@@ -245,11 +236,9 @@ class _JsonSerializer(_Serializer):
         return json.loads(data)
 
     def verify_data_types(self, expected, data_type):
-        if expected in self._allowed_types:
-            if data_type not in self._allowed_types or self._allowed_types[expected] != self._allowed_types[data_type]:
-                raise InvalidData("JSON types not matching. Got '{}' but expected '{}'".format(data_type, expected))
-            return True
-        return False
+        if (expected not in self._allowed_types or data_type not in self._allowed_types or
+                self._allowed_types[expected] != self._allowed_types[data_type]):
+            raise InvalidData("JSON types not matching. Got '{}' but expected '{}'".format(data_type, expected))
 
     def _check_dict_keys(self, obj):
         """
