@@ -131,14 +131,11 @@ class _Serializer(object):
     def loads(self, data):
         raise NotImplementedError("abstract methods must be implemented")
 
-    def is_serializable(self, obj):
-        return obj.__class__.__name__ in self._allowed_types
-
     def verify_data_types(self, expected, data_type):
         raise NotImplementedError("abstract methods must be implemented")
 
     def serialize_object(self, obj):
-        if self.is_serializable(obj):
+        if self._is_serializable(obj):
             return {self._simple_type: obj}
         elif _is_instance_of_class(obj):
             return {self._class_type: {attribute: self.serialize_object(getattr(obj, attribute))
@@ -149,10 +146,17 @@ class _Serializer(object):
         raise NotSerializable("Attribute type not supported: '{}'".format(obj.__class__.__name__))
 
     def deserialize_object(self, obj, data):
-        self._is_deserializable(obj, data)
+        self._validate_data(obj, data)
         return self._deserialize_object(obj, data)
 
-    def _is_deserializable(self, obj, data):
+    def _is_serializable(self, obj):
+        return obj.__class__.__name__ in self._allowed_types
+
+    def _validate_data(self, obj, data):
+        if not isinstance(data, dict):
+            raise InvalidData("Expected dictionary for data")
+        if len(data) != 1:
+            raise InvalidData("Malformed dictionary")
         for s_type, serialized in get_items(data):
             if s_type == self._simple_type:
                 self.verify_data_types(obj.__class__.__name__, serialized.__class__.__name__)
@@ -160,12 +164,12 @@ class _Serializer(object):
                 if not _is_instance_of_class(obj):
                     raise InvalidData("Expected instance of class")
                 if not isinstance(serialized, dict):
-                    raise InvalidData("Expected dictionary data for attribute")
+                    raise InvalidData("Expected dictionary for class")
                 attributes = _get_attributes(obj)
                 if attributes != set(serialized):
                     raise InvalidData("Attributes do not match")
                 for attribute in attributes:
-                    self._is_deserializable(getattr(obj, attribute), serialized[attribute])
+                    self._validate_data(getattr(obj, attribute), serialized[attribute])
             elif s_type == self._reduce_type:
                 if not _can_be_reduced(obj):
                     raise InvalidData("Object can not be reduced")
