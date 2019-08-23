@@ -71,11 +71,8 @@ int: 123, float: 1.23
 #### Methods
 
 - **safe_eval**(node_or_string) - Safely evaluate an expression node or a string containing a Python expression. The string or node provided may only consist of the following Python literal structures: strings, bytes, numbers, tuples, lists, dicts, sets, booleans, and None. Note: This is a modified version of the ast.literal_eval function from Python 3.6
-- **set_packet_serializer**(serializer) - Set serializer to be used in all packets. Serializer must be either ```JSON_SERIALIZER``` or ```AST_SERIALIZER```.
 - **set_packet_encryption_key**(key) - Set encryption key to be used when serializing packets. Encryption key must be a string.
 - **set_packet_encryption_mode**(mode) - Set encryption mode to be used when serializing packets. Encryption mode must be either ```CBC_MODE``` or ```CTR_MODE```.
-- **set_ast_serializer**() - Set ```AST_SERIALIZER``` as the serializer to be used in all packets. Same as ```set_packet_serializer(AST_SERIALIZER)```.
-- **set_json_serializer**() - Set ```JSON_SERIALIZER``` as the serializer to be used in all packets. Same as ```set_packet_serializer(JSON_SERIALIZER)```.
 - **set_cbc_mode**() - Set ```CBC_MODE``` as the encryption mode to be used when serializing packets. Same as ```set_packet_encryption_mode(CBC_MODE)```.
 - **set_ctr_mode**() - Set ```CTR_MODE``` as the encryption mode to be used when serializing packets. Same as ```set_packet_encryption_mode(CTR_MODE)```.
 
@@ -87,6 +84,18 @@ int: 123, float: 1.23
 - **InspectedSafePacket**
 
 ###### Common Methods
+
+- .**set_serializer**(serializer)
+
+    Set serializer to be used. ```serializer``` must be either ```json_serializer``` or ```ast_serializer```.
+
+- .**set_ast_serializer**()
+
+    Set ast_serializer as the serializer to be used. Same as ```.set_packet_serializer(ast_serializer)```.
+
+- .**set_json_serializer**()
+
+    Set json_serializer as the serializer to be used. Same as ```.set_packet_serializer(json_serializer)```.
 
 - .**dump**(fp)
 
@@ -112,10 +121,13 @@ int: 123, float: 1.23
 
     Send data to a connection ```conn``` (typically a socket connection). If no connection, returns ```None```, otherwise returns the same as ```conn.send(data)```.
 
+#### Objects
+
+- **ast_serializer**
+- **json_serializer**
+
 #### Constants
 
-- **JSON_SERIALIZER**
-- **AST_SERIALIZER**
 - **CBC_MODE**
 - **CTR_MODE**
 

@@ -4,6 +4,7 @@
 import hashlib
 import os
 import threading
+from typing import BinaryIO  # noqa
 
 import pyaes
 
@@ -40,12 +41,26 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         return self
 
     def set_json_serializer(self):
+        """
+       Set json_serializer as the serializer to be used.
+       Same as self.set_packet_serializer(json_serializer).
+       """
         self.set_serializer(json_serializer)
 
     def set_ast_serializer(self):
+        """
+       Set ast_serializer as the serializer to be used.
+       Same as self.set_packet_serializer(ast_serializer).
+       """
         self.set_serializer(ast_serializer)
 
     def set_serializer(self, serializer):
+        """
+        Set serializer to be used.
+        Serializer must be either json_serializer or ast_serializer.
+        :param serializer: Serializer to use
+        :type serializer: _Serializer
+        """
         if not isinstance(serializer, _Serializer):
             raise TypeError("Invalid serializer")
         object.__setattr__(self, "_packet_serializer", serializer)
@@ -55,16 +70,14 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         """
         Tag of current packet. This must be equal for all instances
         sharing data.
-
-        :return: str
+        :rtype: str
         """
         return self.__class__.__name__
 
     def _generate_dict(self):
         """
         Return packet as a dictionary
-
-        :return: dict
+        :rtype: dict
         """
         return {attribute: getattr(self, attribute) for attribute in _get_attributes(self)}
 
@@ -72,9 +85,8 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         """
         Serialize packet object to fp (a .write()-supporting file-like object).
         Raises NotSerializable if the packet is not serializable.
-
         :param fp: file-like object
-        :return: None
+        :type fp: BinaryIO
         """
         fp.write(self.dumps())
 
@@ -82,10 +94,8 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         """
         Serialize packet object to string using the packet name as the tag.
         Raises NotSerializable if the packet is not serializable.
-
-        :return: bytes
+        :rtype: bytes
         """
-
         with self._packet_lock:
             _data = self._generate_dict()
 
@@ -94,9 +104,8 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
     def _update_dict(self, data):
         """
         Update packet dictionary with the given data.
-
-        :param data: dict, new data
-        :return: None
+        :param data: new data
+        :type data: dict
         """
         if not isinstance(data, dict):
             raise InvalidData("Expected dictionary data")
@@ -110,9 +119,8 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         Deserialize data from fp (a .read()-supporting file-like object) and
         update packet object.
         Raises UnknownPacket or InvalidData if the data is not deserializable.
-
         :param fp: file-like object
-        :return: None
+        :type fp: BinaryIO
         """
         self.loads(fp.read())
 
@@ -120,9 +128,7 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         """
         Deserialize data and update packet object.
         Raises UnknownPacket or InvalidData if the data is not deserializable.
-
-        :param data: bytes/str
-        :return: None
+        :type data: bytes or str
         """
         with self._packet_lock:
             tag = self.__tag__
@@ -143,10 +149,11 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         by doing conn.recv(buffer_size) and loads the received data into the
         packet. If there is an error loading data or no data is obtained,
         returns False, otherwise returns True.
-
         :param conn: Socket connection
-        :param buffer_size: int, Socket buffer size
-        :return: bool, Success
+        :param buffer_size: Socket buffer size
+        :type buffer_size: int
+        :return: Success
+        :rtype: bool
         """
         if conn is None:
             return False
@@ -164,9 +171,9 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
         Send data to a connection conn (typically a socket connection).
         If no connection, returns None, otherwise returns the same as
         conn.send(data).
-
         :param conn: Socket connection
-        :return: int, Bytes sent
+        :rtype: int
+        :return: Bytes sent
         """
         if conn is None:
             return None
@@ -175,10 +182,9 @@ class Packet(with_metaclass(_PacketMetaClass, _Serializable)):
     def __setattr__(self, name, value):
         """
         Set attribute in a Packet instance.
-
-        :param name: str, name of attribute to set
-        :param value: obj, value of attribute to set
-        :return: None
+        :param name: name of attribute to set
+        :type name: str
+        :param value: value of attribute to set
         """
         if name in _Serializable.__slots__:
             raise AttributeError("'{}' is not a valid attribute name")
@@ -200,28 +206,17 @@ class InspectedPacket(Packet):
     """
 
     def _generate_dict(self):
-        """
-        Return packet as a dictionary
-
-        :return: dict
-        """
         return self._packet_serializer.serialize_object(self)
 
     def _update_dict(self, data):
-        """
-        Update packet dictionary with the given data.
-
-        :param data: dict, new data
-        :return: None
-        """
         self._packet_serializer.deserialize_object(self, data)
 
 
 def _random_iv():
     """
     Generate a random initialization vector (suitable for cryptographic use).
-
-    :return: bytes, iv
+    :return: iv
+    :rtype: bytes
     """
     return os.urandom(16)
 
@@ -273,8 +268,6 @@ def set_cbc_mode():
     """
     Set CBC_MODE as the encryption mode to be used when serializing packets.
     Same as set_packet_encryption_mode(CBC_MODE).
-
-    :return: None
     """
     SafePacket.encryption_mode = CBC_MODE
 
@@ -283,8 +276,6 @@ def set_ctr_mode():
     """
     Set CTR_MODE as the encryption mode to be used when serializing packets.
     Same as set_packet_encryption_mode(CTR_MODE).
-
-    :return: None
     """
     SafePacket.encryption_mode = CTR_MODE
 
@@ -293,9 +284,8 @@ def set_packet_encryption_key(key):
     """
     Set encryption key to be used when serializing packets.
     Encryption key must be a string.
-
-    :param key: str, Encryption key
-    :return: None
+    :param key: Encryption key
+    :type key: str
     """
     if not isinstance(key, str):
         raise ValueError("Key must be a string")
@@ -306,9 +296,8 @@ def set_packet_encryption_mode(mode):
     """
     Set encryption mode to be used when serializing packets.
     Encryption mode must be either CBC_MODE or CTR_MODE.
-
-    :param mode: int, Encryption mode
-    :return: None
+    :param mode: Encryption mode
+    :type mode: int
     """
     if not isinstance(mode, int) or (mode != CBC_MODE and mode != CTR_MODE):
         raise ValueError("Unknown mode")
@@ -327,8 +316,7 @@ class SafePacket(Packet):
         """
         Serialize packet object and encrypt it using the specified
         encryption_key and encryption_mode.
-
-        :return: bytes
+        :rtype: bytes
         """
         cipher = self.__get_cipher()
         return cipher.encrypt(super(SafePacket, self).dumps())
@@ -339,9 +327,8 @@ class SafePacket(Packet):
         encryption_mode and update packet object.
         Raises UnknownEncryption if not possible to decrypt the data.
         Raises UnknownPacket or InvalidData if the data is not deserializable.
-
-        :param data: bytes, Encrypted data
-        :return: None
+        :param data: Encrypted data
+        :type data: bytes
         """
         cipher = self.__get_cipher()
         try:
@@ -354,7 +341,6 @@ class SafePacket(Packet):
         """
         Get the cipher as specified by encryption_mode.
         If no cipher is specified, return the default cipher (CTR).
-
         :return: cipher
         """
         if self.encryption_mode == CBC_MODE:

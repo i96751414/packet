@@ -12,9 +12,9 @@ from packet.utils import NotSerializable, InvalidData
 def _is_instance_of_class(obj):
     """
     Check if object is instance of class.
-
     :param obj: object to check
-    :return: bool, is instance of class
+    :return: is instance of class
+    :rtype bool
     """
     return (hasattr(obj, "__dict__") or hasattr(obj, "__slots__")) and not isinstance(
         obj, (type, types.BuiltinFunctionType, types.FunctionType, types.MethodType, types.ModuleType))
@@ -23,9 +23,9 @@ def _is_instance_of_class(obj):
 def _can_be_reduced(obj):
     """
     Check if object can be reduced and used in InspectedPacket.
-
     :param obj: object to check
-    :return: bool, can be reduced
+    :return: can be reduced
+    :rtype bool
     """
     try:
         reduced = obj.__reduce__()
@@ -39,9 +39,8 @@ def _get_reduced(obj):
     """
     Get result of __reduced__() method from obj converting generators
     to tuples.
-
     :param obj: object to get __reduced__() from
-    :return: list
+    :rtype: list
     """
     reduced = list(obj.__reduce__())
     for i in range(3, len(reduced)):
@@ -103,10 +102,9 @@ class _Serializable(object):
 def _get_attributes(obj):
     """
     Get all the attributes of a given object as a set.
-
     :param obj: object to check attributes
-    :type obj: object
-    :return: tuple, attributes
+    :return: attributes
+    :rtype: set
     """
     attributes = {slot for cls in (getattr(obj.__class__, "__mro__", ()))
                   for slot in getattr(cls, "__slots__", ()) if hasattr(obj, slot)}

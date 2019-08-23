@@ -47,10 +47,9 @@ def safe_eval(node_or_string):
     Python literal structures: strings, bytes, numbers, tuples, lists, dicts,
     sets, booleans, and None.
 
-    Note: This is a modified version of the ast.literal_eval function from
-    Python 3.6
+    Note: This is a modified version of the ast.literal_eval function
 
-    :type node_or_string: str, node
+    :type node_or_string: str or Expression or node
     :param node_or_string: expression string or node
     :return: evaluated
     """
