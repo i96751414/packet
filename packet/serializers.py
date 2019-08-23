@@ -9,16 +9,6 @@ from packet.evaluate import safe_eval
 from packet.utils import NotSerializable, InvalidData
 
 
-def _type_string(var):
-    """
-    Get the type of var as string.
-
-    :param var: variable to check
-    :return: str, type of var
-    """
-    return var.__class__.__name__
-
-
 def _is_instance_of_class(obj):
     """
     Check if object is instance of class.
@@ -51,13 +41,13 @@ def _get_reduced(obj):
     to tuples.
 
     :param obj: object to get __reduced__() from
-    :return: tuple
+    :return: list
     """
     reduced = list(obj.__reduce__())
     for i in range(3, len(reduced)):
         if isinstance(reduced[i], types.GeneratorType):
             reduced[i] = tuple(reduced[i])
-    return tuple(reduced)
+    return reduced
 
 
 def _obj_from_reduce(cls, args, state=None, list_items=None, dict_items=None):
@@ -141,15 +131,14 @@ class _Serializer(object):
     def loads(self, data):
         raise NotImplementedError("abstract methods must be implemented")
 
-    def is_serializable(self, data_type):
-        return data_type in self._allowed_types
+    def is_serializable(self, obj):
+        return obj.__class__.__name__ in self._allowed_types
 
     def verify_data_types(self, expected, data_type):
         raise NotImplementedError("abstract methods must be implemented")
 
     def serialize_object(self, obj):
-        t = _type_string(obj)
-        if self.is_serializable(t):
+        if self.is_serializable(obj):
             return {self._simple_type: obj}
         elif _is_instance_of_class(obj):
             return {self._class_type: {attribute: self.serialize_object(getattr(obj, attribute))
@@ -157,7 +146,7 @@ class _Serializer(object):
         elif _can_be_reduced(obj):
             return {self._reduce_type: _get_reduced(obj)[1:]}
 
-        raise NotSerializable("Attribute type not supported: '{}'".format(t))
+        raise NotSerializable("Attribute type not supported: '{}'".format(obj.__class__.__name__))
 
     def deserialize_object(self, obj, data):
         self._is_deserializable(obj, data)
@@ -166,7 +155,7 @@ class _Serializer(object):
     def _is_deserializable(self, obj, data):
         for s_type, serialized in get_items(data):
             if s_type == self._simple_type:
-                self.verify_data_types(_type_string(obj), _type_string(serialized))
+                self.verify_data_types(obj.__class__.__name__, serialized.__class__.__name__)
             elif s_type == self._class_type:
                 if not _is_instance_of_class(obj):
                     raise InvalidData("Expected instance of class")
